@@ -1,0 +1,112 @@
+{
+  "device": "cuda",
+  "width": 48,
+  "layers": 2,
+  "steps": 180,
+  "runs": {
+    "local_only": {
+      "train": {
+        "seed": 33,
+        "steps": 180,
+        "batch": 8,
+        "seconds": 1.941,
+        "chance": 0.0625,
+        "oracle_writes": false,
+        "curve": [
+          {
+            "step": 1,
+            "acc": 0.0,
+            "loss": 5.627313137054443
+          },
+          {
+            "step": 45,
+            "acc": 0.125,
+            "loss": 2.7872157096862793
+          },
+          {
+            "step": 90,
+            "acc": 0.125,
+            "loss": 2.953810214996338
+          },
+          {
+            "step": 135,
+            "acc": 0.0,
+            "loss": 3.0591838359832764
+          },
+          {
+            "step": 180,
+            "acc": 0.125,
+            "loss": 2.8061459064483643
+          }
+        ],
+        "eval": {
+          "accuracy": 0.07812,
+          "targets": 128,
+          "loss": 2.83523
+        },
+        "query_only": {
+          "accuracy": 0.07812,
+          "targets": 128,
+          "loss": 2.83523
+        }
+      },
+      "accuracy_512": {
+        "accuracy": 0.0625,
+        "targets": 128,
+        "loss": 2.85923
+      }
+    },
+    "shrf_gated": {
+      "train": {
+        "seed": 33,
+        "steps": 180,
+        "batch": 8,
+        "seconds": 27.047,
+        "chance": 0.0625,
+        "oracle_writes": false,
+        "curve": [
+          {
+            "step": 1,
+            "acc": 0.0,
+            "loss": 5.63295316696167
+          },
+          {
+            "step": 45,
+            "acc": 0.25,
+            "loss": 2.469756603240967
+          },
+          {
+            "step": 90,
+            "acc": 1.0,
+            "loss": 0.4743322432041168
+          },
+          {
+            "step": 135,
+            "acc": 1.0,
+            "loss": 0.021833835169672966
+          },
+          {
+            "step": 180,
+            "acc": 1.0,
+            "loss": 0.008050937205553055
+          }
+        ],
+        "eval": {
+          "accuracy": 1.0,
+          "targets": 128,
+          "loss": 0.00764
+        },
+        "query_only": {
+          "accuracy": 0.09375,
+          "targets": 128,
+          "loss": 4.51887
+        }
+      },
+      "accuracy_512": {
+        "accuracy": 1.0,
+        "targets": 128,
+        "loss": 0.00786
+      }
+    }
+  }
+}

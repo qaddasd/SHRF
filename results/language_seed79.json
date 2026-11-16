@@ -1,0 +1,266 @@
+{
+  "config": {
+    "device": "cuda",
+    "width": 64,
+    "layers": 2,
+    "context": 96,
+    "batch": 8,
+    "steps": 180,
+    "eval_every": 60,
+    "eval_batches": 12,
+    "seed": 79,
+    "lr": 0.002,
+    "models": [
+      "gqa",
+      "shrf",
+      "shrf_context",
+      "shrf_local",
+      "local_only"
+    ]
+  },
+  "source": "Python standard library pydoc_data.topics",
+  "runtime": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+  "torch": "2.6.0+cu124",
+  "train": {
+    "topics": [
+      "typesseq-mutable",
+      "compound",
+      "yield",
+      "continue",
+      "while",
+      "raise",
+      "else",
+      "unary",
+      "await",
+      "bltin-type-objects",
+      "types",
+      "assert",
+      "try",
+      "in",
+      "bitwise",
+      "truth",
+      "subscriptions",
+      "specialnames",
+      "floating",
+      "bltin-null-object",
+      "booleans",
+      "operator-summary",
+      "nonlocal",
+      "attribute-references",
+      "slicings",
+      "execmodel",
+      "strings",
+      "string-methods",
+      "naming",
+      "typesseq",
+      "power",
+      "sequence-types",
+      "bltin-ellipsis-object",
+      "dict",
+      "dynamic-features",
+      "objects",
+      "numeric-types",
+      "typesmethods",
+      "identifiers",
+      "function",
+      "shifting",
+      "numbers",
+      "with",
+      "id-classes",
+      "del",
+      "atom-identifiers",
+      "debugger",
+      "break",
+      "exprlists",
+      "global",
+      "typesmodules",
+      "binary",
+      "augassign",
+      "exceptions",
+      "for",
+      "context-managers",
+      "imaginary",
+      "lambda",
+      "return",
+      "integers",
+      "formatstrings",
+      "specialattrs",
+      "import"
+    ],
+    "bytes": 379848,
+    "sha256": "9a1251ea191ff5a8786513e789cabc755383a85da38bb923563224d8b7e6a4c9"
+  },
+  "validation": {
+    "topics": [
+      "atom-literals",
+      "typesmapping",
+      "lists",
+      "class",
+      "async",
+      "assignment",
+      "typesfunctions",
+      "pass",
+      "attribute-access",
+      "conversions",
+      "callable-types",
+      "bltin-code-objects",
+      "customization",
+      "comparisons",
+      "calls"
+    ],
+    "bytes": 79612,
+    "sha256": "31f1c1dce5fc087384cdcb9ce4db9a438bfa209f5f44a2fafca97da708e35861"
+  },
+  "runs": {
+    "gqa": {
+      "parameters": 90432,
+      "total_seconds": 2.8356863999943016,
+      "tokens": 138240,
+      "tokens_per_second": 48750.101562809556,
+      "val_bpb": 3.0636140690318725,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.377618789672852,
+          "val_bpb": 6.997861300316268
+        },
+        {
+          "step": 60,
+          "train_nll": 2.505748748779297,
+          "val_bpb": 3.9509278572553543
+        },
+        {
+          "step": 120,
+          "train_nll": 2.3442699909210205,
+          "val_bpb": 3.4194038659349113
+        },
+        {
+          "step": 180,
+          "train_nll": 1.9597617387771606,
+          "val_bpb": 3.0636140690318725
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "shrf": {
+      "parameters": 74466,
+      "total_seconds": 45.264845600002445,
+      "tokens": 138240,
+      "tokens_per_second": 3054.025660920238,
+      "val_bpb": 3.7509601894441498,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.693454742431641,
+          "val_bpb": 7.639582286600026
+        },
+        {
+          "step": 60,
+          "train_nll": 2.6955530643463135,
+          "val_bpb": 4.169156958236699
+        },
+        {
+          "step": 120,
+          "train_nll": 2.6577224731445312,
+          "val_bpb": 3.8472272776181806
+        },
+        {
+          "step": 180,
+          "train_nll": 2.3881967067718506,
+          "val_bpb": 3.7509601894441498
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "shrf_context": {
+      "parameters": 74474,
+      "total_seconds": 43.865434500003175,
+      "tokens": 138240,
+      "tokens_per_second": 3151.4563021139115,
+      "val_bpb": 3.7329553257253223,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.693454742431641,
+          "val_bpb": 7.638525911830877
+        },
+        {
+          "step": 60,
+          "train_nll": 2.7011213302612305,
+          "val_bpb": 4.167111711888864
+        },
+        {
+          "step": 120,
+          "train_nll": 2.6375107765197754,
+          "val_bpb": 3.8427628946395336
+        },
+        {
+          "step": 180,
+          "train_nll": 2.349367618560791,
+          "val_bpb": 3.7329553257253223
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "shrf_local": {
+      "parameters": 82858,
+      "total_seconds": 28.72690380000131,
+      "tokens": 138240,
+      "tokens_per_second": 4812.213699131533,
+      "val_bpb": 3.0423110080261235,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.693454742431641,
+          "val_bpb": 7.636614095356335
+        },
+        {
+          "step": 60,
+          "train_nll": 2.642451047897339,
+          "val_bpb": 4.077562266057533
+        },
+        {
+          "step": 120,
+          "train_nll": 2.3679416179656982,
+          "val_bpb": 3.3971520053081274
+        },
+        {
+          "step": 180,
+          "train_nll": 1.9600306749343872,
+          "val_bpb": 3.0423110080261235
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "local_only": {
+      "parameters": 74240,
+      "total_seconds": 1.9659913999967102,
+      "tokens": 138240,
+      "tokens_per_second": 70315.6687258303,
+      "val_bpb": 2.6885887722198696,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.388332366943359,
+          "val_bpb": 7.366746142893752
+        },
+        {
+          "step": 60,
+          "train_nll": 2.090472459793091,
+          "val_bpb": 3.4100289769812786
+        },
+        {
+          "step": 120,
+          "train_nll": 2.0471584796905518,
+          "val_bpb": 2.901059593080688
+        },
+        {
+          "step": 180,
+          "train_nll": 1.7917119264602661,
+          "val_bpb": 2.6885887722198696
+        }
+      ],
+      "validation_targets": 9216
+    }
+  }
+}

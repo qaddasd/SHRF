@@ -1,0 +1,218 @@
+{
+  "device": "cuda",
+  "torch": "2.6.0+cu124",
+  "runs": {
+    "1": {
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 192,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1,
+        "coalesce_writes": true
+      },
+      "training": {
+        "seed": 73,
+        "steps": 160,
+        "batch": 8,
+        "seconds": 10.426,
+        "chance": 0.0625,
+        "oracle_writes": false,
+        "curve": [
+          {
+            "step": 1,
+            "acc": 0.0,
+            "loss": 4.2299699783325195
+          },
+          {
+            "step": 40,
+            "acc": 0.625,
+            "loss": 1.6357100009918213
+          },
+          {
+            "step": 80,
+            "acc": 1.0,
+            "loss": 0.21740446984767914
+          },
+          {
+            "step": 120,
+            "acc": 1.0,
+            "loss": 0.02596939727663994
+          },
+          {
+            "step": 160,
+            "acc": 1.0,
+            "loss": 0.015935633331537247
+          }
+        ],
+        "eval": {
+          "accuracy": 1.0,
+          "targets": 128,
+          "loss": 0.01405
+        },
+        "query_only": {
+          "accuracy": 0.0625,
+          "targets": 128,
+          "loss": 3.47084
+        }
+      },
+      "gates": {
+        "payload": {
+          "mean": 0.9212793707847595,
+          "median": 0.9285458922386169
+        },
+        "filler": {
+          "mean": 0.7728757262229919,
+          "median": 0.7979072332382202
+        }
+      },
+      "sweep": {
+        "2048/0": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.01712
+        },
+        "2048/0.05": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.03032
+        },
+        "32768/0": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.01464
+        },
+        "128000/0": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.01349
+        }
+      }
+    },
+    "4": {
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 192,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 4,
+        "coalesce_writes": true
+      },
+      "training": {
+        "seed": 73,
+        "steps": 160,
+        "batch": 8,
+        "seconds": 9.833,
+        "chance": 0.0625,
+        "oracle_writes": false,
+        "curve": [
+          {
+            "step": 1,
+            "acc": 0.0,
+            "loss": 4.2299699783325195
+          },
+          {
+            "step": 40,
+            "acc": 0.625,
+            "loss": 1.6349608898162842
+          },
+          {
+            "step": 80,
+            "acc": 1.0,
+            "loss": 0.21661090850830078
+          },
+          {
+            "step": 120,
+            "acc": 1.0,
+            "loss": 0.025861097499728203
+          },
+          {
+            "step": 160,
+            "acc": 1.0,
+            "loss": 0.015864772722125053
+          }
+        ],
+        "eval": {
+          "accuracy": 1.0,
+          "targets": 128,
+          "loss": 0.01404
+        },
+        "query_only": {
+          "accuracy": 0.0625,
+          "targets": 128,
+          "loss": 3.46961
+        }
+      },
+      "gates": {
+        "payload": {
+          "mean": 0.9233643412590027,
+          "median": 0.9307981729507446
+        },
+        "filler": {
+          "mean": 0.7560761570930481,
+          "median": 0.8047422170639038
+        }
+      },
+      "sweep": {
+        "2048/0": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.01722
+        },
+        "2048/0.05": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.03061
+        },
+        "32768/0": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.01464
+        },
+        "128000/0": {
+          "accuracy": 1.0,
+          "targets": 16,
+          "loss": 0.01357
+        }
+      }
+    }
+  }
+}

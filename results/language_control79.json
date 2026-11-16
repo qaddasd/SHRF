@@ -1,0 +1,204 @@
+{
+  "config": {
+    "device": "cuda",
+    "width": 64,
+    "layers": 2,
+    "context": 96,
+    "batch": 8,
+    "steps": 180,
+    "eval_every": 60,
+    "eval_batches": 12,
+    "seed": 79,
+    "lr": 0.002,
+    "models": [
+      "shrf_local",
+      "shrf_gated",
+      "local_only"
+    ]
+  },
+  "source": "Python standard library pydoc_data.topics",
+  "runtime": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+  "torch": "2.6.0+cu124",
+  "train": {
+    "topics": [
+      "typesseq-mutable",
+      "compound",
+      "yield",
+      "continue",
+      "while",
+      "raise",
+      "else",
+      "unary",
+      "await",
+      "bltin-type-objects",
+      "types",
+      "assert",
+      "try",
+      "in",
+      "bitwise",
+      "truth",
+      "subscriptions",
+      "specialnames",
+      "floating",
+      "bltin-null-object",
+      "booleans",
+      "operator-summary",
+      "nonlocal",
+      "attribute-references",
+      "slicings",
+      "execmodel",
+      "strings",
+      "string-methods",
+      "naming",
+      "typesseq",
+      "power",
+      "sequence-types",
+      "bltin-ellipsis-object",
+      "dict",
+      "dynamic-features",
+      "objects",
+      "numeric-types",
+      "typesmethods",
+      "identifiers",
+      "function",
+      "shifting",
+      "numbers",
+      "with",
+      "id-classes",
+      "del",
+      "atom-identifiers",
+      "debugger",
+      "break",
+      "exprlists",
+      "global",
+      "typesmodules",
+      "binary",
+      "augassign",
+      "exceptions",
+      "for",
+      "context-managers",
+      "imaginary",
+      "lambda",
+      "return",
+      "integers",
+      "formatstrings",
+      "specialattrs",
+      "import"
+    ],
+    "bytes": 379848,
+    "sha256": "9a1251ea191ff5a8786513e789cabc755383a85da38bb923563224d8b7e6a4c9"
+  },
+  "validation": {
+    "topics": [
+      "atom-literals",
+      "typesmapping",
+      "lists",
+      "class",
+      "async",
+      "assignment",
+      "typesfunctions",
+      "pass",
+      "attribute-access",
+      "conversions",
+      "callable-types",
+      "bltin-code-objects",
+      "customization",
+      "comparisons",
+      "calls"
+    ],
+    "bytes": 79612,
+    "sha256": "31f1c1dce5fc087384cdcb9ce4db9a438bfa209f5f44a2fafca97da708e35861"
+  },
+  "runs": {
+    "shrf_local": {
+      "parameters": 82858,
+      "total_seconds": 27.83647079999355,
+      "tokens": 138240,
+      "tokens_per_second": 4966.14678610882,
+      "val_bpb": 3.0556127195193556,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.704342365264893,
+          "val_bpb": 7.589394653390543
+        },
+        {
+          "step": 60,
+          "train_nll": 2.634981870651245,
+          "val_bpb": 4.086548674866642
+        },
+        {
+          "step": 120,
+          "train_nll": 2.3648264408111572,
+          "val_bpb": 3.422911824728335
+        },
+        {
+          "step": 180,
+          "train_nll": 1.9524723291397095,
+          "val_bpb": 3.0556127195193556
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "shrf_gated": {
+      "parameters": 82988,
+      "total_seconds": 27.352578200003336,
+      "tokens": 138240,
+      "tokens_per_second": 5054.002551027645,
+      "val_bpb": 2.68741930452589,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.413544178009033,
+          "val_bpb": 7.382130850926685
+        },
+        {
+          "step": 60,
+          "train_nll": 2.0961391925811768,
+          "val_bpb": 3.406859480044753
+        },
+        {
+          "step": 120,
+          "train_nll": 2.055248975753784,
+          "val_bpb": 2.89479707415972
+        },
+        {
+          "step": 180,
+          "train_nll": 1.7888808250427246,
+          "val_bpb": 2.68741930452589
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "local_only": {
+      "parameters": 74240,
+      "total_seconds": 1.447017100002995,
+      "tokens": 138240,
+      "tokens_per_second": 95534.46189386005,
+      "val_bpb": 2.6885887722198696,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.388332366943359,
+          "val_bpb": 7.366746142893752
+        },
+        {
+          "step": 60,
+          "train_nll": 2.090472459793091,
+          "val_bpb": 3.4100289769812786
+        },
+        {
+          "step": 120,
+          "train_nll": 2.0471584796905518,
+          "val_bpb": 2.901059593080688
+        },
+        {
+          "step": 180,
+          "train_nll": 1.7917119264602661,
+          "val_bpb": 2.6885887722198696
+        }
+      ],
+      "validation_targets": 9216
+    }
+  }
+}

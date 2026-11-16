@@ -1,0 +1,191 @@
+{
+  "config": {
+    "d": 4096,
+    "layers": 32,
+    "trees": 4,
+    "depth": 11,
+    "r": 8,
+    "q": 64,
+    "m": 8,
+    "beam": 2,
+    "chunk": 64,
+    "context_lags": 0,
+    "local_lags": 0,
+    "local_rank": 32,
+    "memory_gated": false
+  },
+  "shrf": {
+    "shape": {
+      "S": 650,
+      "X": 648,
+      "active_nodes": 23,
+      "active_leaves": 2
+    },
+    "hot_fp32_bytes": 2045059328,
+    "hot_fp16_storage_bytes": 1023578368,
+    "hot_fp32_half_slots_bytes": 1705320704,
+    "decode_flops_per_layer": 2921536.0000000005,
+    "prefill_flops_per_layer": 3244132.8750000005,
+    "decode_breakdown": {
+      "projections": 1318912,
+      "read_and_write_routing": 3696,
+      "base_moments": 2816,
+      "base_weight_and_write": 119600,
+      "base_read": 1075786.6666666667,
+      "shrinkage_and_prefix_mixture": 50688,
+      "sketch_features_and_moments": 3584,
+      "sketch_weight_and_write": 10368,
+      "sketch_joint_read": 336085.3333333333,
+      "contextual_keys": 0,
+      "local_value_mixer": 0,
+      "memory_output_gate": 0
+    },
+    "prefill_shared_flops": 2323.125,
+    "ideal_packed_cold_bytes_per_token": 7232,
+    "ideal_packed_fp32_cold_bytes_per_token": 13952
+  },
+  "contexts": [
+    {
+      "tokens": 128000,
+      "mha": {
+        "kv_bytes": 67108864000,
+        "decode_flops_per_layer": 2231369728,
+        "prefill_flops_per_layer": 1182801920
+      },
+      "gqa8": {
+        "kv_bytes": 16777216000,
+        "decode_flops_per_layer": 2181038080,
+        "prefill_flops_per_layer": 1132470272
+      },
+      "mha_hot_ratio": 32.81511840814429,
+      "gqa8_hot_ratio": 8.203779602036073,
+      "ideal_packed_cold_bytes": 925696000
+    },
+    {
+      "tokens": 1000000,
+      "mha": {
+        "kv_bytes": 524288000000,
+        "decode_flops_per_layer": 16518217728,
+        "prefill_flops_per_layer": 8326225920
+      },
+      "gqa8": {
+        "kv_bytes": 131072000000,
+        "decode_flops_per_layer": 16467886080,
+        "prefill_flops_per_layer": 8275894272
+      },
+      "mha_hot_ratio": 256.3681125636273,
+      "gqa8_hot_ratio": 64.09202814090682,
+      "ideal_packed_cold_bytes": 7232000000
+    },
+    {
+      "tokens": 10000000,
+      "mha": {
+        "kv_bytes": 5242880000000,
+        "decode_flops_per_layer": 163974217728,
+        "prefill_flops_per_layer": 82054225920
+      },
+      "gqa8": {
+        "kv_bytes": 1310720000000,
+        "decode_flops_per_layer": 163923886080,
+        "prefill_flops_per_layer": 82003894272
+      },
+      "mha_hot_ratio": 2563.681125636273,
+      "gqa8_hot_ratio": 640.9202814090683,
+      "ideal_packed_cold_bytes": 72320000000
+    }
+  ],
+  "compact": {
+    "config": {
+      "d": 4096,
+      "layers": 32,
+      "trees": 4,
+      "depth": 9,
+      "r": 8,
+      "q": 64,
+      "m": 8,
+      "beam": 2,
+      "chunk": 64,
+      "context_lags": 0,
+      "local_lags": 0,
+      "local_rank": 32,
+      "memory_gated": false
+    },
+    "shrf": {
+      "shape": {
+        "S": 650,
+        "X": 648,
+        "active_nodes": 19,
+        "active_leaves": 2
+      },
+      "hot_fp32_bytes": 511516928,
+      "hot_fp16_storage_bytes": 256020736,
+      "hot_fp32_half_slots_bytes": 426582272,
+      "decode_flops_per_layer": 2703722.666666667,
+      "prefill_flops_per_layer": 2974666.041666667,
+      "decode_breakdown": {
+        "projections": 1318912,
+        "read_and_write_routing": 2992,
+        "base_moments": 2816,
+        "base_weight_and_write": 98800,
+        "base_read": 888693.3333333334,
+        "shrinkage_and_prefix_mixture": 41472,
+        "sketch_features_and_moments": 3584,
+        "sketch_weight_and_write": 10368,
+        "sketch_joint_read": 336085.3333333333,
+        "contextual_keys": 0,
+        "local_value_mixer": 0,
+        "memory_output_gate": 0
+      },
+      "prefill_shared_flops": 1976.625,
+      "ideal_packed_cold_bytes_per_token": 7232,
+      "ideal_packed_fp32_cold_bytes_per_token": 13952
+    }
+  },
+  "contextual_local": {
+    "config": {
+      "d": 4096,
+      "layers": 32,
+      "trees": 4,
+      "depth": 9,
+      "r": 8,
+      "q": 64,
+      "m": 8,
+      "beam": 2,
+      "chunk": 64,
+      "context_lags": 2,
+      "local_lags": 3,
+      "local_rank": 32,
+      "memory_gated": true
+    },
+    "shrf": {
+      "shape": {
+        "S": 650,
+        "X": 648,
+        "active_nodes": 19,
+        "active_leaves": 2
+      },
+      "hot_fp32_bytes": 511537408,
+      "hot_fp16_storage_bytes": 256030976,
+      "hot_fp32_half_slots_bytes": 426602752,
+      "decode_flops_per_layer": 3244714.666666667,
+      "prefill_flops_per_layer": 3515658.041666667,
+      "decode_breakdown": {
+        "projections": 1318912,
+        "read_and_write_routing": 2992,
+        "base_moments": 2816,
+        "base_weight_and_write": 98800,
+        "base_read": 888693.3333333334,
+        "shrinkage_and_prefix_mixture": 41472,
+        "sketch_features_and_moments": 3584,
+        "sketch_weight_and_write": 10368,
+        "sketch_joint_read": 336085.3333333333,
+        "contextual_keys": 128,
+        "local_value_mixer": 528576,
+        "memory_output_gate": 12288
+      },
+      "prefill_shared_flops": 1976.625,
+      "ideal_packed_cold_bytes_per_token": 7232,
+      "ideal_packed_fp32_cold_bytes_per_token": 13952
+    }
+  }
+}

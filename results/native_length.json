@@ -1,0 +1,64 @@
+{
+  "length": 1000000,
+  "training": {
+    "seed": 73,
+    "steps": 160,
+    "batch": 8,
+    "seconds": 10.903,
+    "chance": 0.0625,
+    "oracle_writes": false,
+    "curve": [
+      {
+        "step": 1,
+        "acc": 0.0,
+        "loss": 4.2299699783325195
+      },
+      {
+        "step": 40,
+        "acc": 0.625,
+        "loss": 1.6357102394104004
+      },
+      {
+        "step": 80,
+        "acc": 1.0,
+        "loss": 0.21740445494651794
+      },
+      {
+        "step": 120,
+        "acc": 1.0,
+        "loss": 0.025969386100769043
+      },
+      {
+        "step": 160,
+        "acc": 1.0,
+        "loss": 0.015935633331537247
+      }
+    ],
+    "eval": {
+      "accuracy": 1.0,
+      "targets": 128,
+      "loss": 0.01405
+    },
+    "query_only": {
+      "accuracy": 0.0625,
+      "targets": 128,
+      "loss": 3.47084
+    }
+  },
+  "episodes": [
+    {
+      "fraction": 0.05,
+      "expected": 29,
+      "predicted": 29,
+      "correct": true,
+      "seconds": 58.19913709999673
+    },
+    {
+      "fraction": 0.5,
+      "expected": 30,
+      "predicted": 30,
+      "correct": true,
+      "seconds": 58.52761499999906
+    }
+  ]
+}

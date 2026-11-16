@@ -1,0 +1,42 @@
+{
+  "torch": "2.6.0+cu124",
+  "cpu": null,
+  "runs": [
+    {
+      "name": "small",
+      "d": 64,
+      "E": 4,
+      "D": 6,
+      "r": 8,
+      "q": 32,
+      "m": 8,
+      "beam": 2,
+      "tokens": 300,
+      "repeats": 3,
+      "state_python": "float32",
+      "state_rust": "float64",
+      "max_abs_diff": 1.1622905731201172e-06,
+      "torch_ms_per_token": 6.701188666665985,
+      "rust_ms_per_token": 0.30582299999271834,
+      "speedup": 21.911983947661035
+    },
+    {
+      "name": "d4096",
+      "d": 4096,
+      "E": 4,
+      "D": 11,
+      "r": 8,
+      "q": 64,
+      "m": 8,
+      "beam": 2,
+      "tokens": 300,
+      "repeats": 3,
+      "state_python": "float32",
+      "state_rust": "float64",
+      "max_abs_diff": 1.5348196029663086e-06,
+      "torch_ms_per_token": 10.5599063333284,
+      "rust_ms_per_token": 1.1314470000070287,
+      "speedup": 9.333098530698123
+    }
+  ]
+}

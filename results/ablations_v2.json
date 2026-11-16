@@ -1,0 +1,965 @@
+{
+  "device": "cuda",
+  "steps": 120,
+  "seed": 37,
+  "runs": {
+    "full": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.568,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0625,
+          "loss": 4.7181010246276855
+        },
+        {
+          "step": 30,
+          "acc": 0.6666666865348816,
+          "loss": 1.755536437034607
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.14006268978118896
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.0336066372692585
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.016842639073729515
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01701
+      },
+      "query_only": {
+        "accuracy": 0.08203,
+        "targets": 512,
+        "loss": 3.8597
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.02138
+      },
+      "noisy_overload": {
+        "accuracy": 0.55078,
+        "targets": 512,
+        "loss": 1.70233
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "no_sketch": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 3.18,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0625,
+          "loss": 4.717155933380127
+        },
+        {
+          "step": 30,
+          "acc": 0.6666666865348816,
+          "loss": 1.7325445413589478
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.1341095268726349
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.03328946977853775
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.017072366550564766
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01687
+      },
+      "query_only": {
+        "accuracy": 0.08398,
+        "targets": 512,
+        "loss": 3.85079
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01934
+      },
+      "noisy_overload": {
+        "accuracy": 0.5625,
+        "targets": 512,
+        "loss": 1.71856
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": false,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "no_shrinkage": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 3.965,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0625,
+          "loss": 4.722676753997803
+        },
+        {
+          "step": 30,
+          "acc": 0.6875,
+          "loss": 1.7526627779006958
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.13882622122764587
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.0330827571451664
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.016690339893102646
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01709
+      },
+      "query_only": {
+        "accuracy": 0.08203,
+        "targets": 512,
+        "loss": 3.86968
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01903
+      },
+      "noisy_overload": {
+        "accuracy": 0.53125,
+        "targets": 512,
+        "loss": 1.98649
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": false,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "E1": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.09,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.02083333395421505,
+          "loss": 4.78131628036499
+        },
+        {
+          "step": 30,
+          "acc": 0.7291666865348816,
+          "loss": 1.7446141242980957
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.18077267706394196
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.03997138515114784
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.01748391054570675
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01932
+      },
+      "query_only": {
+        "accuracy": 0.05273,
+        "targets": 512,
+        "loss": 3.95703
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.02455
+      },
+      "noisy_overload": {
+        "accuracy": 0.50781,
+        "targets": 512,
+        "loss": 2.20852
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 1,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "E4": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 5.406,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0,
+          "loss": 4.903929233551025
+        },
+        {
+          "step": 30,
+          "acc": 0.7291666865348816,
+          "loss": 1.6913433074951172
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.18719492852687836
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.03924449905753136
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.01870914362370968
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01909
+      },
+      "query_only": {
+        "accuracy": 0.0957,
+        "targets": 512,
+        "loss": 3.67128
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.02087
+      },
+      "noisy_overload": {
+        "accuracy": 0.62109,
+        "targets": 512,
+        "loss": 1.27266
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 4,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "r4": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.173,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.02083333395421505,
+          "loss": 4.786326885223389
+        },
+        {
+          "step": 30,
+          "acc": 0.5625,
+          "loss": 2.014373540878296
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.264592707157135
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.04830251261591911
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.019434073939919472
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.0289
+      },
+      "query_only": {
+        "accuracy": 0.05078,
+        "targets": 512,
+        "loss": 3.91444
+      },
+      "overload": {
+        "accuracy": 0.97852,
+        "targets": 512,
+        "loss": 0.10078
+      },
+      "noisy_overload": {
+        "accuracy": 0.45117,
+        "targets": 512,
+        "loss": 2.28247
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 4,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "r12": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.463,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.02083333395421505,
+          "loss": 4.4638285636901855
+        },
+        {
+          "step": 30,
+          "acc": 0.8541666865348816,
+          "loss": 1.377272605895996
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.12194773554801941
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.030457524582743645
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.014432082884013653
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01598
+      },
+      "query_only": {
+        "accuracy": 0.0625,
+        "targets": 512,
+        "loss": 3.953
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.0185
+      },
+      "noisy_overload": {
+        "accuracy": 0.53125,
+        "targets": 512,
+        "loss": 1.76191
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 12,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "m2": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.199,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0625,
+          "loss": 4.719242572784424
+        },
+        {
+          "step": 30,
+          "acc": 0.6458333730697632,
+          "loss": 1.7572544813156128
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.13988979160785675
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.03356840834021568
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.016990549862384796
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01714
+      },
+      "query_only": {
+        "accuracy": 0.08203,
+        "targets": 512,
+        "loss": 3.86338
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.02183
+      },
+      "noisy_overload": {
+        "accuracy": 0.51562,
+        "targets": 512,
+        "loss": 1.77873
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 2,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "m12": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.331,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0625,
+          "loss": 4.717298984527588
+        },
+        {
+          "step": 30,
+          "acc": 0.6458333730697632,
+          "loss": 1.7688485383987427
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.14021244645118713
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.03367341309785843
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.017092231661081314
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01711
+      },
+      "query_only": {
+        "accuracy": 0.07617,
+        "targets": 512,
+        "loss": 3.85365
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.02178
+      },
+      "noisy_overload": {
+        "accuracy": 0.55078,
+        "targets": 512,
+        "loss": 1.77608
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 12,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "no_binding": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.067,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.02083333395421505,
+          "loss": 4.735135555267334
+        },
+        {
+          "step": 30,
+          "acc": 0.0833333358168602,
+          "loss": 2.8948299884796143
+        },
+        {
+          "step": 60,
+          "acc": 0.0625,
+          "loss": 2.7462427616119385
+        },
+        {
+          "step": 90,
+          "acc": 0.0625,
+          "loss": 2.7745072841644287
+        },
+        {
+          "step": 120,
+          "acc": 0.0,
+          "loss": 2.838188886642456
+        }
+      ],
+      "eval": {
+        "accuracy": 0.07031,
+        "targets": 512,
+        "loss": 2.80874
+      },
+      "query_only": {
+        "accuracy": 0.07031,
+        "targets": 512,
+        "loss": 2.81179
+      },
+      "overload": {
+        "accuracy": 0.06055,
+        "targets": 512,
+        "loss": 2.82469
+      },
+      "noisy_overload": {
+        "accuracy": 0.06641,
+        "targets": 512,
+        "loss": 2.8033
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 2,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 0,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    },
+    "beam1": {
+      "seed": 37,
+      "steps": 120,
+      "batch": 12,
+      "seconds": 4.105,
+      "chance": 0.0625,
+      "oracle_writes": false,
+      "curve": [
+        {
+          "step": 1,
+          "acc": 0.0416666679084301,
+          "loss": 4.716536998748779
+        },
+        {
+          "step": 30,
+          "acc": 0.6666666865348816,
+          "loss": 1.7607965469360352
+        },
+        {
+          "step": 60,
+          "acc": 1.0,
+          "loss": 0.14005202054977417
+        },
+        {
+          "step": 90,
+          "acc": 1.0,
+          "loss": 0.0334293358027935
+        },
+        {
+          "step": 120,
+          "acc": 1.0,
+          "loss": 0.01697157323360443
+        }
+      ],
+      "eval": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01666
+      },
+      "query_only": {
+        "accuracy": 0.08008,
+        "targets": 512,
+        "loss": 3.8812
+      },
+      "overload": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01859
+      },
+      "noisy_overload": {
+        "accuracy": 0.52734,
+        "targets": 512,
+        "loss": 1.9388
+      },
+      "config": {
+        "d_model": 48,
+        "n_trees": 2,
+        "depth": 3,
+        "r_key": 8,
+        "d_value": 16,
+        "sketch_rank": 6,
+        "beam": 1,
+        "ridge": 0.05,
+        "sketch_ridge": 0.1,
+        "sketch_bandwidth": 2.0,
+        "tau": 0.14,
+        "dir_mix": 0.35,
+        "kappa_min": 0.25,
+        "kappa_max": 256.0,
+        "chunk_size": 64,
+        "write_lag": 1,
+        "sketch_budget": null,
+        "use_sketch": true,
+        "use_shrinkage": true,
+        "detach_chunks": true,
+        "load_balance_weight": 0.01,
+        "seed": 0,
+        "context_lags": 0,
+        "gate_power": 1.0,
+        "coalesce_writes": true
+      }
+    }
+  },
+  "robustness": {
+    "noise": {
+      "0.0": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.01718
+      },
+      "0.2": {
+        "accuracy": 1.0,
+        "targets": 512,
+        "loss": 0.0229
+      },
+      "0.5": {
+        "accuracy": 0.93359,
+        "targets": 512,
+        "loss": 0.30294
+      },
+      "1.0": {
+        "accuracy": 0.44141,
+        "targets": 512,
+        "loss": 2.17443
+      },
+      "2.0": {
+        "accuracy": 0.10352,
+        "targets": 512,
+        "loss": 3.76449
+      }
+    },
+    "rank": {
+      "16": {
+        "accuracy": 0.71484,
+        "targets": 512,
+        "loss": 0.94209
+      },
+      "8": {
+        "accuracy": 0.34375,
+        "targets": 512,
+        "loss": 2.36415
+      },
+      "4": {
+        "accuracy": 0.23633,
+        "targets": 512,
+        "loss": 3.11588
+      },
+      "2": {
+        "accuracy": 0.11719,
+        "targets": 512,
+        "loss": 4.51169
+      },
+      "0": {
+        "accuracy": 0.05078,
+        "targets": 512,
+        "loss": 5.46096
+      }
+    }
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "config": {
+    "device": "cuda",
+    "width": 64,
+    "layers": 2,
+    "context": 96,
+    "batch": 8,
+    "steps": 180,
+    "eval_every": 60,
+    "eval_batches": 12,
+    "seed": 45,
+    "lr": 0.002
+  },
+  "source": "Python standard library pydoc_data.topics",
+  "runtime": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+  "torch": "2.6.0+cu124",
+  "train": {
+    "topics": [
+      "typesseq-mutable",
+      "compound",
+      "yield",
+      "continue",
+      "while",
+      "raise",
+      "else",
+      "unary",
+      "await",
+      "bltin-type-objects",
+      "types",
+      "assert",
+      "try",
+      "in",
+      "bitwise",
+      "truth",
+      "subscriptions",
+      "specialnames",
+      "floating",
+      "bltin-null-object",
+      "booleans",
+      "operator-summary",
+      "nonlocal",
+      "attribute-references",
+      "slicings",
+      "execmodel",
+      "strings",
+      "string-methods",
+      "naming",
+      "typesseq",
+      "power",
+      "sequence-types",
+      "bltin-ellipsis-object",
+      "dict",
+      "dynamic-features",
+      "objects",
+      "numeric-types",
+      "typesmethods",
+      "identifiers",
+      "function",
+      "shifting",
+      "numbers",
+      "with",
+      "id-classes",
+      "del",
+      "atom-identifiers",
+      "debugger",
+      "break",
+      "exprlists",
+      "global",
+      "typesmodules",
+      "binary",
+      "augassign",
+      "exceptions",
+      "for",
+      "context-managers",
+      "imaginary",
+      "lambda",
+      "return",
+      "integers",
+      "formatstrings",
+      "specialattrs",
+      "import"
+    ],
+    "bytes": 379848,
+    "sha256": "9a1251ea191ff5a8786513e789cabc755383a85da38bb923563224d8b7e6a4c9"
+  },
+  "validation": {
+    "topics": [
+      "atom-literals",
+      "typesmapping",
+      "lists",
+      "class",
+      "async",
+      "assignment",
+      "typesfunctions",
+      "pass",
+      "attribute-access",
+      "conversions",
+      "callable-types",
+      "bltin-code-objects",
+      "customization",
+      "comparisons",
+      "calls"
+    ],
+    "bytes": 79612,
+    "sha256": "31f1c1dce5fc087384cdcb9ce4db9a438bfa209f5f44a2fafca97da708e35861"
+  },
+  "runs": {
+    "gqa": {
+      "parameters": 90432,
+      "total_seconds": 2.35471360000156,
+      "tokens": 138240,
+      "tokens_per_second": 58707.776605999316,
+      "val_bpb": 3.2090903811146276,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.49980354309082,
+          "val_bpb": 7.235245284338984
+        },
+        {
+          "step": 60,
+          "train_nll": 2.707623243331909,
+          "val_bpb": 4.1029849421544995
+        },
+        {
+          "step": 120,
+          "train_nll": 2.433673620223999,
+          "val_bpb": 3.5167159780231354
+        },
+        {
+          "step": 180,
+          "train_nll": 2.0287609100341797,
+          "val_bpb": 3.2090903811146276
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "shrf": {
+      "parameters": 74466,
+      "total_seconds": 29.770090099998924,
+      "tokens": 138240,
+      "tokens_per_second": 4643.586886557827,
+      "val_bpb": 3.76195822199285,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.693525791168213,
+          "val_bpb": 7.840863041950568
+        },
+        {
+          "step": 60,
+          "train_nll": 2.770418405532837,
+          "val_bpb": 4.150368885525842
+        },
+        {
+          "step": 120,
+          "train_nll": 2.629969358444214,
+          "val_bpb": 3.8478571640769657
+        },
+        {
+          "step": 180,
+          "train_nll": 2.322617292404175,
+          "val_bpb": 3.76195822199285
+        }
+      ],
+      "validation_targets": 9216
+    },
+    "shrf_context": {
+      "parameters": 74474,
+      "total_seconds": 29.734235799998714,
+      "tokens": 138240,
+      "tokens_per_second": 4649.186242076078,
+      "val_bpb": 3.735328428333253,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.693525791168213,
+          "val_bpb": 7.840892279001215
+        },
+        {
+          "step": 60,
+          "train_nll": 2.776542901992798,
+          "val_bpb": 4.147076306338849
+        },
+        {
+          "step": 120,
+          "train_nll": 2.6128289699554443,
+          "val_bpb": 3.8436860975093654
+        },
+        {
+          "step": 180,
+          "train_nll": 2.282041072845459,
+          "val_bpb": 3.735328428333253
+        }
+      ],
+      "validation_targets": 9216
+    }
+  }
+}
