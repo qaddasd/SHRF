@@ -34,6 +34,55 @@ A token reads the prefix before its own write becomes visible. Training computes
 the prefixes with segmented scans. Consolidation reduces resident sketch
 allocations, with indexed recovery from the optional SQLite tape.
 
+## Language model checkpoints
+
+The reasoning decoder has four SHRF layers, a local causal mixer, 469,560
+parameters, and a 2,048-token vocabulary with byte fallback. It supports
+English and Russian prompts and saves its vocabulary in the checkpoint.
+
+| Checkpoint | Training data | Local output |
+|---|---|---|
+| Fable 5k | Assistant text from the Fable 5k split | `checkpoints/fable_shrf_text_5k/best.pt` |
+| STEM 840 | GSM8K, MBPP, SciQ, Dolly, OpenAssistant, and synthetic exercises | `checkpoints/shrf_curriculum_2/SHRF-STEM-840.pt` |
+| Distilled 960 | The STEM mixture plus short samples from five instruction datasets | `checkpoints/shrf_distilled/best.pt` |
+| Tensorov RU–EN | Tensorov SFT Core, OpenAssistant, and checked math, logic, and Python exercises | `checkpoints/shrf_tensorov_reasoning_v2/model.pt` |
+| Tensorov Math | 300 more steps from Tensorov RU–EN, with additional arithmetic and GSM8K train examples | `checkpoints/shrf_tensorov_math/model.pt` |
+
+The math run's data pool includes 4,429 Tensorov examples, 1,301 OpenAssistant
+exchanges, 6,756 synthetic reasoning cases, 1,048 additional bilingual
+arithmetic prompts, and 371 eligible GSM8K train examples. Most Tensorov
+answers are long enough that training uses a prefix of the answer and
+omits its end marker. See the [dataset and training guide](docs/REASONING.md).
+
+```console
+python -m experiments.reasoning generate --checkpoint checkpoints/shrf_tensorov_math/model.pt --prompt "Compute 30 / 5."
+python -m experiments.reasoning generate --checkpoint checkpoints/shrf_tensorov_math/model.pt --arithmetic checkpoints/shrf_digit_arithmetic/digit_cell.pt --prompt "Solve 7x + 11 = 74. Give a number."
+```
+
+The second command uses the optional certified digit module for supported
+formats, including single-variable linear equations and simple equal-group
+problems. The decoder's learned answer accuracy is measured with that
+module disabled.
+
+### Mathematics fine-tuning results
+
+| Held-out evaluation | Tensorov RU–EN | Tensorov Math |
+|---|---:|---:|
+| Short integer arithmetic | 2/32 | 3/32 |
+| Linear equations and equal-group problems | 0/18 | 0/18 |
+| GSM8K word problems | 0/24 | 0/24 |
+| Logic | 12/18 | 11/18 |
+| Simple Python functions | 10/18 | 5/18 |
+| English reference answers, bits per UTF-8 byte ↓ | 2.73 | 2.68 |
+| Russian reference answers, bits per UTF-8 byte ↓ | 2.62 | 2.51 |
+
+With the digit module enabled, the runtime solved all 50 short arithmetic,
+linear equation, and equal-group prompts. The prompts came from the two
+structured mathematics rows of the table. The mathematics fine-tune
+improved arithmetic by one prompt and reduced pass rates on logic and Python.
+The [raw results](results/tensorov_math.json) include the training mixture
+and scores by operation.
+
 ## Benchmark snapshot
 
 ![SHRF benchmark charts for modeled memory, measured GPU prefill, and synthetic recall](docs/assets/benchmarks.png)
@@ -59,14 +108,42 @@ dependencies and can be built for Windows, Linux, or macOS.
 
 ```console
 python -m pip install -r requirements.txt
+python -m pip install pytest
 cargo build --release --manifest-path rust/shrf-core/Cargo.toml
 cargo test --manifest-path rust/shrf-core/Cargo.toml
-python -m unittest discover -s tests -v
+python -m pytest -q
 python -m experiments.demo
 ```
 
 The native parity test runs after building the shared library. See
 [Reproduction commands](docs/REPRODUCING.md) for the research benchmarks.
+
+### Train a small SHRF language model
+
+Download the [Fable 5k JSONL split](https://huggingface.co/datasets/MoreThought/Fable-5.1-Max-Reasoning-Filtered-10000x/blob/main/5k/train.jsonl).
+The trainer initializes a four-layer gated SHRF decoder with a local causal
+mixer, samples 256-byte windows, and predicts assistant text. Tool calls and
+tool outputs can appear in the input context. Whole traces are deduplicated
+and assigned to training or validation before window sampling. Validation
+scores fixed 64-byte continuations that do not appear verbatim anywhere in
+the rendered training traces.
+
+```console
+python -m experiments.fable train --data train.jsonl --output checkpoints/fable --device cuda --steps 300
+python -m experiments.fable generate --checkpoint checkpoints/fable/best.pt --device cpu --prompt "Explain binary search."
+```
+
+The run saves `best.pt` for generation, `latest.pt` for resuming, and
+`metrics.json` with held-out bits per byte. To resume, repeat the training command
+with the same data and model configuration, add `--resume`, and raise
+`--steps` to the new total number of optimizer steps.
+
+To continue on mathematics, algebra, basic physics, Python, and English and
+Russian writing, follow the [instruction training guide](docs/CURRICULUM.md).
+The [bilingual reasoning experiment](docs/REASONING.md) adds a reversible
+word vocabulary, Tensorov instruction data, and supervised short solutions.
+
+### Use SHRF as a layer
 
 ```python
 import torch

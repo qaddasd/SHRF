@@ -1,0 +1,354 @@
+{
+  "metadata": {
+    "architecture": {
+      "kind": "shrf_gated",
+      "width": 96,
+      "layers": 4,
+      "context": 192,
+      "vocab_size": 2048
+    },
+    "parent_step": 360,
+    "parameters": 469560,
+    "examples": {
+      "tensorov/combined-reasoning-distill-cleaned": 4429,
+      "verified": 6756,
+      "OpenAssistant-en": 1091,
+      "GSM8K train": 371,
+      "OpenAssistant-ru": 210,
+      "verified-arithmetic": 1048
+    },
+    "composition": {
+      "tensorov/combined-reasoning-distill-cleaned": {
+        "code": 1261,
+        "en": 1557,
+        "math": 1601,
+        "ru": 6,
+        "logic": 4
+      },
+      "verified": {
+        "code": 1813,
+        "math": 3478,
+        "logic": 1465
+      },
+      "OpenAssistant-en": {
+        "en": 1091
+      },
+      "GSM8K train": {
+        "math": 371
+      },
+      "OpenAssistant-ru": {
+        "ru": 210
+      },
+      "verified-arithmetic": {
+        "math": 1048
+      }
+    },
+    "tensorov_file": "sft_core_train.parquet",
+    "tensorov_bytes": 1289909712,
+    "tensorov_answer_prefixes": 4401,
+    "seed": 62,
+    "batch": 8,
+    "vocabulary": 2048,
+    "math_focus": true
+  },
+  "curve": [
+    {
+      "step": 1,
+      "loss": 3.591019868850708,
+      "text": {
+        "en": {
+          "bpb": 2.726912090096382,
+          "answer_bytes": 2487,
+          "answer_tokens": 1603,
+          "examples": 20
+        },
+        "ru": {
+          "bpb": 2.619992111390972,
+          "answer_bytes": 2878,
+          "answer_tokens": 1516,
+          "examples": 20
+        }
+      },
+      "seconds": 7.875021199999992
+    },
+    {
+      "step": 100,
+      "loss": 2.741542339324951,
+      "text": {
+        "en": {
+          "bpb": 2.763947304647838,
+          "answer_bytes": 2487,
+          "answer_tokens": 1603,
+          "examples": 20
+        },
+        "ru": {
+          "bpb": 2.501329427024019,
+          "answer_bytes": 2878,
+          "answer_tokens": 1516,
+          "examples": 20
+        }
+      },
+      "seconds": 80.80293110000002
+    },
+    {
+      "step": 200,
+      "loss": 1.7669386863708496,
+      "text": {
+        "en": {
+          "bpb": 2.694472876562753,
+          "answer_bytes": 2487,
+          "answer_tokens": 1603,
+          "examples": 20
+        },
+        "ru": {
+          "bpb": 2.506741367042077,
+          "answer_bytes": 2878,
+          "answer_tokens": 1516,
+          "examples": 20
+        }
+      },
+      "seconds": 152.10366339999996
+    },
+    {
+      "step": 300,
+      "loss": 0.21119698882102966,
+      "text": {
+        "en": {
+          "bpb": 2.6827438273999427,
+          "answer_bytes": 2487,
+          "answer_tokens": 1603,
+          "examples": 20
+        },
+        "ru": {
+          "bpb": 2.5055055052106847,
+          "answer_bytes": 2878,
+          "answer_tokens": 1516,
+          "examples": 20
+        }
+      },
+      "seconds": 229.28330549999987
+    }
+  ],
+  "training_samples": {
+    "arithmetic/other": 1000,
+    "math/gsm8k": 235,
+    "math/other": 179,
+    "math/tensorov": 186,
+    "en/other": 114,
+    "en/tensorov": 86,
+    "ru/other": 105,
+    "ru/tensorov": 95,
+    "code/other": 104,
+    "code/tensorov": 96,
+    "logic/other": 100,
+    "logic/tensorov": 100
+  },
+  "before_text": {
+    "en": {
+      "bpb": 2.7293936601982765,
+      "answer_bytes": 2487,
+      "answer_tokens": 1603,
+      "examples": 20
+    },
+    "ru": {
+      "bpb": 2.6156031370879083,
+      "answer_bytes": 2878,
+      "answer_tokens": 1516,
+      "examples": 20
+    }
+  },
+  "after_text": {
+    "en": {
+      "bpb": 2.6827438273999427,
+      "answer_bytes": 2487,
+      "answer_tokens": 1603,
+      "examples": 20
+    },
+    "ru": {
+      "bpb": 2.5055055052106847,
+      "answer_bytes": 2878,
+      "answer_tokens": 1516,
+      "examples": 20
+    }
+  },
+  "before_exam": {
+    "math": {
+      "correct": 0,
+      "total": 18,
+      "languages": {
+        "ru": {
+          "correct": 0,
+          "total": 9
+        },
+        "en": {
+          "correct": 0,
+          "total": 9
+        }
+      }
+    },
+    "logic": {
+      "correct": 12,
+      "total": 18,
+      "languages": {
+        "ru": {
+          "correct": 5,
+          "total": 9
+        },
+        "en": {
+          "correct": 7,
+          "total": 9
+        }
+      }
+    },
+    "code": {
+      "correct": 10,
+      "total": 18,
+      "languages": {
+        "ru": {
+          "correct": 4,
+          "total": 9
+        },
+        "en": {
+          "correct": 6,
+          "total": 9
+        }
+      }
+    },
+    "gsm8k": {
+      "correct": 0,
+      "total": 24,
+      "languages": {
+        "en": {
+          "correct": 0,
+          "total": 24
+        }
+      }
+    },
+    "arithmetic": {
+      "correct": 2,
+      "total": 32,
+      "languages": {
+        "ru": {
+          "correct": 1,
+          "total": 19
+        },
+        "en": {
+          "correct": 1,
+          "total": 13
+        }
+      }
+    }
+  },
+  "after_exam": {
+    "math": {
+      "correct": 0,
+      "total": 18,
+      "languages": {
+        "ru": {
+          "correct": 0,
+          "total": 9
+        },
+        "en": {
+          "correct": 0,
+          "total": 9
+        }
+      }
+    },
+    "logic": {
+      "correct": 11,
+      "total": 18,
+      "languages": {
+        "ru": {
+          "correct": 5,
+          "total": 9
+        },
+        "en": {
+          "correct": 6,
+          "total": 9
+        }
+      }
+    },
+    "code": {
+      "correct": 5,
+      "total": 18,
+      "languages": {
+        "ru": {
+          "correct": 1,
+          "total": 9
+        },
+        "en": {
+          "correct": 4,
+          "total": 9
+        }
+      }
+    },
+    "gsm8k": {
+      "correct": 0,
+      "total": 24,
+      "languages": {
+        "en": {
+          "correct": 0,
+          "total": 24
+        }
+      }
+    },
+    "arithmetic": {
+      "correct": 3,
+      "total": 32,
+      "languages": {
+        "ru": {
+          "correct": 1,
+          "total": 19
+        },
+        "en": {
+          "correct": 2,
+          "total": 13
+        }
+      }
+    }
+  },
+  "arithmetic_cpu_by_operator": {
+    "before": {
+      "+": {
+        "correct": 0,
+        "total": 8
+      },
+      "-": {
+        "correct": 0,
+        "total": 8
+      },
+      "*": {
+        "correct": 2,
+        "total": 8
+      },
+      "/": {
+        "correct": 0,
+        "total": 8
+      }
+    },
+    "after": {
+      "+": {
+        "correct": 0,
+        "total": 8
+      },
+      "-": {
+        "correct": 0,
+        "total": 8
+      },
+      "*": {
+        "correct": 1,
+        "total": 8
+      },
+      "/": {
+        "correct": 2,
+        "total": 8
+      }
+    }
+  },
+  "digit_module": {
+    "correct": 50,
+    "total": 50,
+    "arithmetic_prompts": 32,
+    "algebra_and_equal_groups_prompts": 18
+  }
+}

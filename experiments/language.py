@@ -96,9 +96,9 @@ class GQAMixer(nn.Module):
 
 
 class TinyDecoder(nn.Module):
-    def __init__(self, kind, width, layers, context):
+    def __init__(self, kind, width, layers, context, vocab_size=256):
         super().__init__()
-        self.embed = nn.Embedding(256, width)
+        self.embed = nn.Embedding(vocab_size, width)
         nn.init.normal_(self.embed.weight, std=.08)
         self.before = nn.ModuleList(RMSNorm(width) for _ in range(layers))
         self.after = nn.ModuleList(RMSNorm(width) for _ in range(layers))
