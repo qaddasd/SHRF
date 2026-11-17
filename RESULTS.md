@@ -1,5 +1,7 @@
 # SHRF experiments and accounting
 
+[Numerical and portability follow-up](docs/HARDENING.md)
+
 ## Calculated resident state
 
 Decimal GB, batch one, d=4,096, 32 layers. MHA/GQA KV uses FP16. SHRF stores FP32 moments in PyTorch. The FP16 column is a storage-only model.
@@ -8,7 +10,7 @@ Decimal GB, batch one, d=4,096, 32 layers. MHA/GQA KV uses FP16. SHRF stores FP3
 |---:|---:|---:|---:|---:|---:|---:|
 | 128,000 | 67.109 | 16.777 | 2.045 | 1.024 | 0.512 | 32.8× |
 | 1,000,000 | 524.288 | 131.072 | 2.045 | 1.024 | 0.512 | 256.2× |
-| 10,000,000 | 5242.880 | 1310.720 | 2.045 | 1.024 | 0.512 | 2562.4× |
+| 10,000,000 | 5242.880 | 1310.720 | 2.045 | 1.024 | 0.512 | 2562.3× |
 
 The ideal packed FP32 cold archive, with 16-bit leaf IDs and 32-bit weights, adds 13,952 B/token across 32 layers (1.786 GB at 128k, 13.952 GB at 1M, 139.520 GB at 10M). SQLite stores exact arrays and has additional BLOB and index overhead. State and tape exclude model weights.
 
@@ -16,9 +18,9 @@ The ideal packed FP32 cold archive, with 16-bit leaf IDs and 32-bit weights, add
 
 | Context | MHA prefill / decode (GFLOPs) | GQA8 prefill / decode (GFLOPs) | SHRF D11 prefill / decode (MFLOPs) |
 |---:|---:|---:|---:|
-| 128,000 | 1.183 / 2.231 | 1.132 / 2.181 | 3.244 / 2.922 |
-| 1,000,000 | 8.326 / 16.518 | 8.276 / 16.468 | 3.244 / 2.922 |
-| 10,000,000 | 82.054 / 163.974 | 82.004 / 163.924 | 3.244 / 2.922 |
+| 128,000 | 1.183 / 2.231 | 1.132 / 2.181 | 3.218 / 2.895 |
+| 1,000,000 | 8.326 / 16.518 | 8.276 / 16.468 | 3.218 / 2.895 |
+| 10,000,000 | 82.054 / 163.974 | 82.004 / 163.924 | 3.218 / 2.895 |
 
 Prefill is averaged over causal prefixes. The estimates omit sorting and transcendentals, so see the CPU measurement below for latency.
 
@@ -127,7 +129,7 @@ The large row measures one SHRF layer. It supplies no end-to-end Transformer or 
 
 ## Contextual decoder revision
 
-The compact D9 profile with two key lags, a three-lag rank-32 local path and a memory output gate adds 20,480 FP32 resident bytes across 32 layers. It uses 0.511537 GB of resident state and approximately 3.516 / 3.245 MFLOPs per layer per token for prefill / decode. See docs/REVISION.md.
+The compact D9 profile with two key lags, a three-lag rank-32 local path and a memory output gate adds 20,480 FP32 resident bytes across 32 layers. It uses 0.511554 GB of resident state and approximately 3.492 / 3.221 MFLOPs per layer per token for prefill / decode. See docs/REVISION.md.
 
 ### Held-out Python documentation
 

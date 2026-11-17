@@ -1,7 +1,9 @@
 """Decoder memory with the same soft causal update in scan and decode modes."""
 from __future__ import annotations
-from dataclasses import dataclass
+
 import math
+from dataclasses import dataclass
+
 import torch
 from torch import Tensor, nn
 
@@ -26,6 +28,9 @@ class SHRFState:
     heap_time: Tensor | None = None
     extra_time: Tensor | None = None
     decay: float = 1.0
+    key_origin: Tensor | None = None
+    value_origin: Tensor | None = None
+    feature_origin: Tensor | None = None
 
 
 class SHRFLayer(nn.Module):
@@ -107,7 +112,7 @@ class SHRFLayer(nn.Module):
                 index, values = coalesce_rows(index, values)
                 flat.index_add_(0, index, values)
             else:
-                for group, row in zip(groups, rows):
+                for group, row in zip(groups, rows, strict=False):
                     flat.index_add_(0, group.reshape(-1), row.flatten(0, -2))
         return heap
 
@@ -167,13 +172,22 @@ class SHRFLayer(nn.Module):
                 write.append(RouteLevel(level.node[:, :-1], level.mass[:, :-1], None))
         else:
             read = write = route
-        values = v.unsqueeze(-2).expand(-1, -1, c.n_trees, -1)
-        raw = contribution(kw, values, self.lay)
+        key_origin, value_origin, feature_origin = state.key_origin, state.value_origin, state.feature_origin
+        if key_origin is None:
+            fresh = state.count == 0
+            key_origin = torch.where(fresh[:, None, None], k[:, 0].detach(), 0.)
+            value_origin = torch.where(fresh[:, None], v[:, 0].detach(), 0.)
+            if self.sketch is not None:
+                feature_origin = torch.where(fresh[:, None, None], self.sketch.features(key_origin), 0.)
+        query = k - key_origin[:, None]
+        write_key = kw - key_origin[:, None]
+        values = (v - value_origin[:, None]).unsqueeze(-2).expand(-1, -1, c.n_trees, -1)
+        raw = contribution(write_key, values, self.lay)
         use_sketch = self.sketch is not None and state.extra.shape[2] > 1
         if use_sketch:
-            phi = self.sketch.features(trajectory)
+            phi = self.sketch.features(trajectory) - feature_origin[:, None]
             phi_r, phi_w = (phi[:, 1:], phi[:, :-1]) if c.write_lag else (phi, phi)
-            raw_extra = self.sketch.contribution(kw, phi_w, values)
+            raw_extra = self.sketch.contribution(write_key, phi_w, values)
         elapsed = k.shape[1]
         clock = state.heap_time
         time = prefix_scale = end_scale = None
@@ -185,7 +199,7 @@ class SHRFLayer(nn.Module):
             prefix_scale = self._discount((offsets-1).clamp_min(0), k)[None, :, None, None, None]
             end_scale = self._discount(offsets[-1], k)
         groups, rows, prefixes = [], [], []
-        for depth, (rd, wr) in enumerate(zip(read, write)):
+        for depth, (rd, wr) in enumerate(zip(read, write, strict=False)):
             rg, wg = self._group(rd.node, c.n_nodes), self._group(wr.node, c.n_nodes)
             weighted = raw.unsqueeze(-2) * (scaled_gate[..., None, None] * wr.mass).unsqueeze(-1)
             groups.append(wg)
@@ -197,7 +211,7 @@ class SHRFLayer(nn.Module):
         # all the path nodes in one batched operation, then apply the recursion.
         widths = [rd.node.shape[-1] for rd in read]
         stats = torch.cat(prefixes, dim=3)
-        keys = k.unsqueeze(-2).expand(*stats.shape[:-1], c.r_key)
+        keys = query.unsqueeze(-2).expand(*stats.shape[:-1], c.r_key)
         fits = ridge(stats, keys, self.lay, c.ridge)
         predictions = list(fits["pred"].split(widths, dim=3))
         means = fits["mu_v"].split(widths, dim=3)
@@ -217,7 +231,7 @@ class SHRFLayer(nn.Module):
             extra = self._read_pass(state.extra, read_slots, write_slots, extra_rows,
                                     state.extra_time, time, prefix_scale)
             phi = phi_r.unsqueeze(-2).expand(*rd.node.shape, self.sketch.m)
-            leaf_key = k.unsqueeze(-2).expand(*rd.node.shape, c.r_key)
+            leaf_key = query.unsqueeze(-2).expand(*rd.node.shape, c.r_key)
             nonlinear = self.sketch.joint(prefixes[-1], extra, leaf_key, phi, self.lay,
                                           c.ridge, c.sketch_ridge)["pred"]
             predictions[-1] = torch.where((rs != 0).unsqueeze(-1), nonlinear, predictions[-1])
@@ -258,6 +272,8 @@ class SHRFLayer(nn.Module):
                                                    [extra_rows], end, end_scale, keep_graph)
         state.previous_key = k[:, -1] if keep_graph else k[:, -1].detach().clone()
         state.count = end
+        state.key_origin, state.value_origin, state.feature_origin = key_origin, value_origin, feature_origin
+        result = result + (counts[0] > 1e-8) * value_origin[:, None, None]
         return result.mean(-2), torch.stack(aux).mean() if aux else k.new_zeros(())
 
     def forward(self, x, state=None, return_aux=False, *, write_weight=None):
@@ -345,17 +361,17 @@ class SHRFLayer(nn.Module):
         c = self.cfg
         if query.shape != (c.r_key,):
             raise ValueError("Recovery query must be a single projected key")
-        # Refit covariance in archive precision on CPU. The result is in value space.
-        key, val, weight = rows.key, rows.value, rows.weight.unsqueeze(-1)
+        key, val, weight = rows.key.double(), rows.value.double(), rows.weight.double().unsqueeze(-1)
         query = query.to(key)
-        base = (contribution(key, val, self.lay) * weight).sum(0)
+        key_origin, value_origin = key[0], val[0]
+        base = (contribution(key - key_origin, val - value_origin, self.lay) * weight).sum(0)
         if self.sketch is None:
-            return ridge(base, query, self.lay, c.ridge)["pred"]
-        omega = self.sketch.omega[tree].to(key)
-        phase = self.sketch.phase[tree].to(key)
-        scale = (2 / self.sketch.m)**0.5
-        phi = scale * (key @ omega + phase).cos()
-        phi_query = scale * (query @ omega + phase).cos()
-        extra = (self.sketch.contribution(key, phi, val) * weight).sum(0)
-        return self.sketch.joint(base, extra, query, phi_query, self.lay,
-                                 c.ridge, c.sketch_ridge)["pred"]
+            pred = ridge(base, query - key_origin, self.lay, c.ridge)["pred"]
+        else:
+            phi = self.sketch.tree_features(tree, key)
+            phi_query = self.sketch.tree_features(tree, query)
+            extra = (self.sketch.contribution(key - key_origin, phi - phi[0],
+                                              val - value_origin) * weight).sum(0)
+            pred = self.sketch.joint(base, extra, query - key_origin, phi_query - phi[0],
+                                    self.lay, c.ridge, c.sketch_ridge)["pred"]
+        return (pred + value_origin).to(rows.value.dtype) if base[0] > 1e-8 else pred.to(rows.value.dtype)

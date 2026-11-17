@@ -2,9 +2,9 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import statistics
 import time
+from pathlib import Path
 
 import torch
 
@@ -38,10 +38,10 @@ def bench(name, cfg, tokens, repeats):
                 rust.step(row)
             rs.append(time.perf_counter()-t0)
     p, r = statistics.median(py), statistics.median(rs)
-    return dict(name=name, d=cfg.d_model, E=cfg.n_trees, D=cfg.depth, r=cfg.r_key,
-                q=cfg.d_value, m=cfg.sketch_width, beam=cfg.beam, tokens=tokens, repeats=repeats,
-                state_python="float32", state_rust="float64", max_abs_diff=err,
-                torch_ms_per_token=p/tokens*1e3, rust_ms_per_token=r/tokens*1e3, speedup=p/r)
+    return {"name": name, "d": cfg.d_model, "E": cfg.n_trees, "D": cfg.depth, "r": cfg.r_key,
+                "q": cfg.d_value, "m": cfg.sketch_width, "beam": cfg.beam, "tokens": tokens, "repeats": repeats,
+                "state_python": "float32", "state_rust": "float64", "max_abs_diff": err,
+                "torch_ms_per_token": p/tokens*1e3, "rust_ms_per_token": r/tokens*1e3, "speedup": p/r}
 
 
 def main():
@@ -55,7 +55,7 @@ def main():
                                      d_value=32, sketch_rank=8), args.tokens, args.repeats),
             bench("d4096", SHRFConfig(d_model=4096, n_trees=4, depth=11, r_key=8,
                                      d_value=64, sketch_rank=8), args.tokens, args.repeats)]
-    result = dict(torch=torch.__version__, cpu=os.environ.get("PROCESSOR_IDENTIFIER"), runs=rows)
+    result = {"torch": torch.__version__, "cpu": os.environ.get("PROCESSOR_IDENTIFIER"), "runs": rows}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2)+"\n", encoding="utf-8")
     print(json.dumps(result, indent=2))

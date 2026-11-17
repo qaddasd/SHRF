@@ -1,7 +1,8 @@
 """Optional exact cold archive, indexed by batch, tree, leaf and token position."""
+import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-import sqlite3
 from uuid import uuid4
 
 import numpy as np
@@ -21,13 +22,16 @@ class TapeConflictError(sqlite3.IntegrityError):
 
 
 class IDTape:
-    def __init__(self, path: str | Path = ":memory:", *, wal=False):
+    def __init__(self, path: str | Path = ":memory:", *, wal=False, checkpoint_mode="snapshot"):
+        if checkpoint_mode not in ("snapshot", "reference"):
+            raise ValueError("checkpoint_mode must be 'snapshot' or 'reference'")
         self.path = str(path) if str(path) == ":memory:" else str(Path(path).resolve())
         self.wal = bool(wal)
+        self.checkpoint_mode = checkpoint_mode
         self.db = sqlite3.connect(self.path)
         self._configure()
         self._create_tables()
-        with self.db:
+        with self._transaction():
             self.db.execute("INSERT OR IGNORE INTO tape_identity VALUES(1,?)", (uuid4().hex,))
             self.identity = self._identity()
 
@@ -58,11 +62,15 @@ class IDTape:
         return self.db.execute("SELECT token FROM tape_identity WHERE singleton=1").fetchone()[0]
 
     def __getstate__(self):
-        snapshot = "\n".join(self.db.iterdump()) if self.path == ":memory:" else None
-        return self.path, self.wal, self.identity, snapshot
+        if self.checkpoint_mode == "reference" and self.path != ":memory:":
+            return self.path, self.wal, self.identity, None
+        with self._transaction():
+            snapshot = "\n".join(self.db.iterdump())
+        return ":memory:", False, self.identity, snapshot
 
     def __setstate__(self, state):
         self.path, self.wal, self.identity, snapshot = state
+        self.checkpoint_mode = "snapshot" if snapshot is not None else "reference"
         if snapshot is not None:
             self.db = sqlite3.connect(":memory:")
             self.db.executescript(snapshot)
@@ -79,6 +87,19 @@ class IDTape:
             except (sqlite3.Error, TypeError):
                 self.db.close()
                 raise
+
+    @contextmanager
+    def _transaction(self):
+        # An outer transaction, if any, stays owned by the caller.
+        self.db.execute("SAVEPOINT shrf_tape")
+        try:
+            yield
+        except BaseException:
+            self.db.execute("ROLLBACK TO shrf_tape")
+            self.db.execute("RELEASE shrf_tape")
+            raise
+        else:
+            self.db.execute("RELEASE shrf_tape")
 
     def record(self, starts, keys, values, gate, leaves, mass):
         starts, keys, values, gate, leaves, mass = (
@@ -100,11 +121,11 @@ class IDTape:
                     continue
                 payload.append((b, t, self._encode(keys[b, s]), self._encode(values[b, s]), g))
                 for e in range(E):
-                    for l, w in zip(leaves[b, s, e], mass[b, s, e]):
+                    for leaf, w in zip(leaves[b, s, e], mass[b, s, e], strict=False):
                         if w > 0:
-                            routes.append((b, e, int(l), t, float(w)))
+                            routes.append((b, e, int(leaf), t, float(w)))
         try:
-            with self.db:
+            with self._transaction():
                 self.db.executemany("INSERT INTO obs VALUES(?,?,?,?,?)", payload)
                 self.db.executemany("INSERT INTO route VALUES(?,?,?,?,?)", routes)
                 self._check_skipped(skipped)
@@ -122,9 +143,7 @@ class IDTape:
         by_position = {}
         for batch, tree, leaf, t, mass in routes:
             by_position.setdefault((batch, t), []).append((tree, leaf, mass))
-        with self.db:
-            self.db.execute("BEGIN IMMEDIATE")
-            self._check_skipped(skipped)
+        with self._transaction():
             for batch, t, key, value, gate in payload:
                 inserted = self.db.execute(
                     "INSERT INTO obs VALUES(?,?,?,?,?) ON CONFLICT(batch,t) DO NOTHING",
@@ -143,6 +162,7 @@ class IDTape:
                 ).fetchall()
                 if existing != (key, value, gate) or existing_routes != expected_routes:
                     raise TapeConflictError(f"Archive already contains different data at batch={batch}, t={t}")
+            self._check_skipped(skipped)
 
     @staticmethod
     def _encode(array):
@@ -180,7 +200,7 @@ class IDTape:
     def _recovery(self, rows, tree=None):
         if not rows:
             return None
-        time, keys, values, weights = zip(*rows)
+        time, keys, values, weights = zip(*rows, strict=False)
         key = np.stack([self._decode(k) for k in keys])
         value = np.stack([self._decode(v) for v in values])
         return Recovery(torch.tensor(time), torch.from_numpy(key if tree is None else key[:, tree]),

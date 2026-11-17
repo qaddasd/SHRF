@@ -1,14 +1,28 @@
 import unittest
+
 import torch
+
 from shrf import SHRFConfig, SHRFLayer
 from shrf.routing import RouteLevel
 
 
 class LayerTest(unittest.TestCase):
+    def test_default_gradient_reaches_more_than_64_tokens(self):
+        layer = SHRFLayer(SHRFConfig(d_model=1, r_key=1, d_value=1, depth=0,
+                                      n_trees=1, write_lag=0, use_sketch=False)).double()
+        with torch.no_grad():
+            layer.W_k.zero_()
+            layer.W_v.weight.fill_(1)
+            layer.W_o.weight.fill_(1)
+        x = torch.zeros(1, 131, 1, dtype=torch.float64, requires_grad=True)
+        y, _ = layer(x)
+        y[0, -1, 0].backward()
+        self.assertAlmostEqual(float(x.grad[0, 0, 0]), 1/130, places=10)
+
     def setUp(self):
         torch.manual_seed(12)
         self.x = torch.randn(2, 17, 16)
-        self.cfg = dict(d_model=16, depth=3, r_key=4, d_value=8, sketch_rank=5, beam=3)
+        self.cfg = {"d_model": 16, "depth": 3, "r_key": 4, "d_value": 8, "sketch_rank": 5, "beam": 3}
 
     def test_parallel_recurrent_and_causality(self):
         for lag in (0, 1):

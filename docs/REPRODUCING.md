@@ -20,6 +20,7 @@ python -m experiments.probes
 python -m experiments.needle_blocks --device cuda
 python -m experiments.length --device cuda
 python -m experiments.native_length
+python -m experiments.native_length --length 1000000 --fractions 0.05 --train-decoys 1 --decoy-fraction 1 --output results/native_length_shared_vocab.json
 ```
 
 `--device cpu` is available for the Python-only experiments. The Rust

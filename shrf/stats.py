@@ -1,5 +1,6 @@
 """Additive weighted sufficient statistics and batched affine ridge fits."""
 from __future__ import annotations
+
 import torch
 from torch import Tensor
 
@@ -17,9 +18,9 @@ class StatLayout:
         self.dim = self.e + 1
 
     def unpack(self, s: Tensor) -> dict:
-        return dict(n=s[..., self.n], a=s[..., self.a], b=s[..., self.b],
-                    G=s[..., self.G].unflatten(-1, (self.r, self.r)),
-                    C=s[..., self.C].unflatten(-1, (self.r, self.q)), e=s[..., self.e])
+        return {"n": s[..., self.n], "a": s[..., self.a], "b": s[..., self.b],
+                    "G": s[..., self.G].unflatten(-1, (self.r, self.r)),
+                    "C": s[..., self.C].unflatten(-1, (self.r, self.q)), "e": s[..., self.e]}
 
 
 def outer(x, y):
@@ -34,21 +35,31 @@ def contribution(k: Tensor, v: Tensor, lay: StatLayout) -> Tensor:
 
 def fit(n, a, b, gram, cross, energy, key, diagonal):
     """Fit row-weighted ridge with an unpenalized intercept."""
-    safe = n.clamp_min(1e-8).unsqueeze(-1)
+    dtype = key.dtype
+    safe = n.double().clamp_min(1e-8).unsqueeze(-1)
+    a, b, gram, cross = (x.double() for x in (a, b, gram, cross))
     mu_k, mu_v = a / safe, b / safe
     centered_gram = gram - outer(a, mu_k)
     centered_gram = 0.5 * (centered_gram + centered_gram.transpose(-1, -2))
     centered_cross = cross - outer(a, mu_v)
-    reg = torch.maximum(diagonal, 1e-5 * n.unsqueeze(-1))
-    system = centered_gram + torch.diag_embed(reg)
-    coef = torch.linalg.solve_ex(system, centered_cross, check_errors=False).result
-    pred = mu_v + ((key - mu_k).unsqueeze(-2) @ coef).squeeze(-2)
-    gain = (coef * centered_cross).sum((-1, -2))
-    rss = (energy - (b * mu_v).sum(-1) - gain -
-           (reg.unsqueeze(-1) * coef.square()).sum((-1, -2))).clamp_min(0)
-    return dict(pred=pred.masked_fill(n.unsqueeze(-1) <= 1e-8, 0),
-                n=n, sigma2=rss / (safe.squeeze(-1) * b.shape[-1]),
-                mu_v=mu_v, mu_k=mu_k, rss=rss, gain=gain, M=coef)
+    diagonal = diagonal.double()
+    system = centered_gram + torch.diag_embed(diagonal)
+    factor, info = torch.linalg.cholesky_ex(system, check_errors=False)
+    failed = (info != 0)[..., None, None]
+    if bool(failed.any()):
+        # Rebuild failed systems before backward so malformed factors never enter autograd.
+        resized = torch.eye(system.shape[-1], device=system.device, dtype=system.dtype)
+        factor = torch.linalg.cholesky_ex(torch.where(failed, resized, system)).L
+        centered_cross = centered_cross.masked_fill(failed, 0)
+    coef64 = torch.cholesky_solve(centered_cross, factor)
+    pred = (mu_v + ((key.double() - mu_k).unsqueeze(-2) @ coef64).squeeze(-2)).to(dtype)
+    gain = (coef64 * centered_cross).sum((-1, -2))
+    rss = (energy.double() - (b * mu_v).sum(-1) - gain
+           - (diagonal.unsqueeze(-1) * coef64.square()).sum((-1, -2))).clamp_min(0)
+    return {"pred": pred.masked_fill(n.unsqueeze(-1) <= 1e-8, 0),
+                "n": n, "sigma2": (rss / (safe.squeeze(-1) * b.shape[-1])).to(dtype),
+                "mu_v": mu_v.to(dtype), "mu_k": mu_k.to(dtype), "rss": rss.to(dtype),
+                "gain": gain.to(dtype), "M": coef64.to(dtype)}
 
 
 def ridge(stats: Tensor, k: Tensor, lay: StatLayout, rho: float) -> dict:

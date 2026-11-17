@@ -146,9 +146,9 @@ chunked recurrent prefill. Build the current native library before running it.
   held-out loss and occupancy sweep to choose the smallest stable size.
 - Tune shrinkage where nodes have sparse noisy observations. The variance ratio
   is a heuristic, so log its saturation and compare held-out quality without it.
-- Use `detach_chunks=False` for exact cross-chunk gradient comparisons on short
-  sequences. A long training run with detached chunks still sees older moments
-  in its forward pass, while gradients into the old writes are truncated.
+- Full gradients cross chunk boundaries by default. Set `detach_chunks=True` to
+  truncate backpropagation on long training runs. Older moments remain visible
+  to the forward pass.
 - FP64 chunk coalescing reduces FP32 update loss during prefill. Choose FP64
   recurrent state if a mature node must preserve very small per-token writes.
 - Use the local-only decoder as a baseline. Short held-out text can reward the

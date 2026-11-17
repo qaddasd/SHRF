@@ -1,8 +1,11 @@
 """Bounded soft routing over a fixed-shape 1-indexed heap."""
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import torch
-from torch import nn, Tensor
+from torch import Tensor, nn
+
 from .stats import StatLayout, contribution, ridge
 
 

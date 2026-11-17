@@ -1,5 +1,7 @@
 import unittest
+
 import torch
+
 from shrf.scans import causal_prefix, coalesce_rows, exclusive_segmented_cumsum
 
 

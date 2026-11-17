@@ -21,21 +21,22 @@
       "active_nodes": 23,
       "active_leaves": 2
     },
-    "hot_fp32_bytes": 2045059328,
-    "hot_fp16_storage_bytes": 1023578368,
-    "hot_fp32_half_slots_bytes": 1705320704,
-    "decode_flops_per_layer": 2921536.0000000005,
-    "prefill_flops_per_layer": 3244132.8750000005,
+    "hot_fp32_bytes": 2045075712,
+    "hot_fp16_storage_bytes": 1023586560,
+    "hot_fp32_half_slots_bytes": 1705337088,
+    "decode_flops_per_layer": 2895359.9999999995,
+    "prefill_flops_per_layer": 3217956.8749999995,
     "decode_breakdown": {
       "projections": 1318912,
       "read_and_write_routing": 3696,
       "base_moments": 2816,
+      "origin_translation": 448,
       "base_weight_and_write": 119600,
-      "base_read": 1075786.6666666667,
+      "base_read": 1060085.3333333333,
       "shrinkage_and_prefix_mixture": 50688,
       "sketch_features_and_moments": 3584,
       "sketch_weight_and_write": 10368,
-      "sketch_joint_read": 336085.3333333333,
+      "sketch_joint_read": 325162.6666666667,
       "contextual_keys": 0,
       "local_value_mixer": 0,
       "memory_output_gate": 0
@@ -57,8 +58,8 @@
         "decode_flops_per_layer": 2181038080,
         "prefill_flops_per_layer": 1132470272
       },
-      "mha_hot_ratio": 32.81511840814429,
-      "gqa8_hot_ratio": 8.203779602036073,
+      "mha_hot_ratio": 32.81485551181393,
+      "gqa8_hot_ratio": 8.203713877953483,
       "ideal_packed_cold_bytes": 925696000
     },
     {
@@ -73,8 +74,8 @@
         "decode_flops_per_layer": 16467886080,
         "prefill_flops_per_layer": 8275894272
       },
-      "mha_hot_ratio": 256.3681125636273,
-      "gqa8_hot_ratio": 64.09202814090682,
+      "mha_hot_ratio": 256.36605868604636,
+      "gqa8_hot_ratio": 64.09151467151159,
       "ideal_packed_cold_bytes": 7232000000
     },
     {
@@ -89,8 +90,8 @@
         "decode_flops_per_layer": 163923886080,
         "prefill_flops_per_layer": 82003894272
       },
-      "mha_hot_ratio": 2563.681125636273,
-      "gqa8_hot_ratio": 640.9202814090683,
+      "mha_hot_ratio": 2563.6605868604634,
+      "gqa8_hot_ratio": 640.9151467151158,
       "ideal_packed_cold_bytes": 72320000000
     }
   ],
@@ -117,21 +118,22 @@
         "active_nodes": 19,
         "active_leaves": 2
       },
-      "hot_fp32_bytes": 511516928,
-      "hot_fp16_storage_bytes": 256020736,
-      "hot_fp32_half_slots_bytes": 426582272,
-      "decode_flops_per_layer": 2703722.666666667,
-      "prefill_flops_per_layer": 2974666.041666667,
+      "hot_fp32_bytes": 511533312,
+      "hot_fp16_storage_bytes": 256028928,
+      "hot_fp32_half_slots_bytes": 426598656,
+      "decode_flops_per_layer": 2680277.333333333,
+      "prefill_flops_per_layer": 2951220.708333333,
       "decode_breakdown": {
         "projections": 1318912,
         "read_and_write_routing": 2992,
         "base_moments": 2816,
+        "origin_translation": 448,
         "base_weight_and_write": 98800,
-        "base_read": 888693.3333333334,
+        "base_read": 875722.6666666666,
         "shrinkage_and_prefix_mixture": 41472,
         "sketch_features_and_moments": 3584,
         "sketch_weight_and_write": 10368,
-        "sketch_joint_read": 336085.3333333333,
+        "sketch_joint_read": 325162.6666666667,
         "contextual_keys": 0,
         "local_value_mixer": 0,
         "memory_output_gate": 0
@@ -164,21 +166,22 @@
         "active_nodes": 19,
         "active_leaves": 2
       },
-      "hot_fp32_bytes": 511537408,
-      "hot_fp16_storage_bytes": 256030976,
-      "hot_fp32_half_slots_bytes": 426602752,
-      "decode_flops_per_layer": 3244714.666666667,
-      "prefill_flops_per_layer": 3515658.041666667,
+      "hot_fp32_bytes": 511553792,
+      "hot_fp16_storage_bytes": 256039168,
+      "hot_fp32_half_slots_bytes": 426619136,
+      "decode_flops_per_layer": 3221269.333333333,
+      "prefill_flops_per_layer": 3492212.708333333,
       "decode_breakdown": {
         "projections": 1318912,
         "read_and_write_routing": 2992,
         "base_moments": 2816,
+        "origin_translation": 448,
         "base_weight_and_write": 98800,
-        "base_read": 888693.3333333334,
+        "base_read": 875722.6666666666,
         "shrinkage_and_prefix_mixture": 41472,
         "sketch_features_and_moments": 3584,
         "sketch_weight_and_write": 10368,
-        "sketch_joint_read": 336085.3333333333,
+        "sketch_joint_read": 325162.6666666667,
         "contextual_keys": 128,
         "local_value_mixer": 528576,
         "memory_output_gate": 12288

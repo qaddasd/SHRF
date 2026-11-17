@@ -1,6 +1,6 @@
 """Calculate resident tensor bytes and leading arithmetic FLOPs."""
-from dataclasses import asdict, dataclass
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 
@@ -29,7 +29,7 @@ def memory_and_flops(c):
     S, X = 2 + r + q + r*r + r*q, m + r*m + m*m + m*q
 
     def solve(p):
-        return 2*p**3/3 + 2*p*p*q
+        return p**3/3 + 2*p*p*q
 
     def ridge(p):
         return solve(p) + 4*p*p + 5*p*q + 3*(p+q) + 2*q
@@ -38,6 +38,7 @@ def memory_and_flops(c):
         "projections": 2*d*(E*r + 2*q + 1),
         "read_and_write_routing": 2*E*((H-min(c.beam, J))*(2*r+6)),
         "base_moments": E*(r*r + r*q + 2*q),
+        "origin_translation": 2*E*(r+m) + q + E*q,
         "base_weight_and_write": 2*E*H*S,
         "base_read": E*H*ridge(r),
         "shrinkage_and_prefix_mixture": 9*E*(H-1)*q,
@@ -58,7 +59,7 @@ def memory_and_flops(c):
     def state(b, slots):
         # Sketch slot zero is a shared sentinel within each tree and batch.
         sketch = (slots+1)*X if m else 0
-        carry = E*r*c.context_lags + c.local_lags*c.local_rank
+        carry = E*r*c.context_lags + c.local_lags*c.local_rank + E*(r+m) + q
         return c.layers*(b*(E*(N*S + sketch + r) + carry) + (8*E*J if m else 0) + 8)
 
     # Packed idealization for per-layer cold archive, before indexing or compression.
@@ -66,36 +67,37 @@ def memory_and_flops(c):
     memberships = E*min(c.beam, J)
     cold_per_token = c.layers*(2*(E*r + q + 1) + 4*memberships)
     cold_fp32 = c.layers*(4*(E*r + q + 1) + 6*memberships)
-    return dict(shape=dict(S=S, X=X, active_nodes=H, active_leaves=W),
-                hot_fp32_bytes=state(4, J), hot_fp16_storage_bytes=state(2, J),
-                hot_fp32_half_slots_bytes=state(4, J//2),
-                decode_flops_per_layer=decode, prefill_flops_per_layer=prefill,
-                decode_breakdown=parts, prefill_shared_flops=shared_prefill,
-                ideal_packed_cold_bytes_per_token=cold_per_token,
-                ideal_packed_fp32_cold_bytes_per_token=cold_fp32)
+    return {"shape": {"S": S, "X": X, "active_nodes": H, "active_leaves": W},
+                "hot_fp32_bytes": state(4, J), "hot_fp16_storage_bytes": state(2, J),
+                "hot_fp32_half_slots_bytes": state(4, J//2),
+                "decode_flops_per_layer": decode, "prefill_flops_per_layer": prefill,
+                "decode_breakdown": parts, "prefill_shared_flops": shared_prefill,
+                "ideal_packed_cold_bytes_per_token": cold_per_token,
+                "ideal_packed_fp32_cold_bytes_per_token": cold_fp32}
 
 
 def attention(d, dkv, t, layers):
     proj = 4*d*d + 4*d*dkv
-    return dict(kv_bytes=4*layers*t*dkv, decode_flops_per_layer=proj+4*t*d,
-                prefill_flops_per_layer=proj+2*(t+1)*d)
+    return {"kv_bytes": 4*layers*t*dkv, "decode_flops_per_layer": proj+4*t*d,
+                "prefill_flops_per_layer": proj+2*(t+1)*d}
 
 
-def build_report(c=Config()):
+def build_report(c=None):
+    c = Config() if c is None else c
     shrf = memory_and_flops(c)
     rows = []
     for t in (128_000, 1_000_000, 10_000_000):
         mha, gqa = (attention(c.d, width, t, c.layers) for width in (c.d, c.d//4))
-        rows.append(dict(tokens=t, mha=mha, gqa8=gqa,
-                         mha_hot_ratio=mha["kv_bytes"]/shrf["hot_fp32_bytes"],
-                         gqa8_hot_ratio=gqa["kv_bytes"]/shrf["hot_fp32_bytes"],
-                         ideal_packed_cold_bytes=t*shrf["ideal_packed_cold_bytes_per_token"]))
+        rows.append({"tokens": t, "mha": mha, "gqa8": gqa,
+                         "mha_hot_ratio": mha["kv_bytes"]/shrf["hot_fp32_bytes"],
+                         "gqa8_hot_ratio": gqa["kv_bytes"]/shrf["hot_fp32_bytes"],
+                         "ideal_packed_cold_bytes": t*shrf["ideal_packed_cold_bytes_per_token"]})
     compact = Config(**(asdict(c) | {"depth": min(c.depth, 9)}))
     local = Config(**(asdict(compact) | {"context_lags": 2, "local_lags": 3,
                                          "memory_gated": True}))
-    return dict(config=asdict(c), shrf=shrf, contexts=rows,
-                compact=dict(config=asdict(compact), shrf=memory_and_flops(compact)),
-                contextual_local=dict(config=asdict(local), shrf=memory_and_flops(local)))
+    return {"config": asdict(c), "shrf": shrf, "contexts": rows,
+                "compact": {"config": asdict(compact), "shrf": memory_and_flops(compact)},
+                "contextual_local": {"config": asdict(local), "shrf": memory_and_flops(local)}}
 
 
 if __name__ == "__main__":

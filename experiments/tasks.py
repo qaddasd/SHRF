@@ -10,7 +10,6 @@ def choices(batch, pool, count, device):
 
 def _bindings(keys, payload, query_keys, idx, vocab, meta):
     B, items = keys.shape
-    queries = query_keys.shape[1]
     ids = torch.cat((torch.stack((keys, payload), -1).reshape(B, -1),
                      torch.stack((query_keys, torch.zeros_like(query_keys)), -1).reshape(B, -1)), -1)
     targets = torch.zeros_like(ids)
@@ -39,7 +38,7 @@ def semantic_recall(B, n_items=6, n_queries=4, n_facts=16, n_para=5,
     payload = torch.randint(n_values, (B, n_items), device=device) + 1+n_facts*n_para
     idx = torch.randint(n_items, (B, n_queries), device=device)
     alias = n_para-1 if held_out else torch.randint(1, n_para-1, idx.shape, device=device)
-    meta = dict(chance=1/n_values, clusters=n_facts, per_cluster=n_para)
+    meta = {"chance": 1/n_values, "clusters": n_facts, "per_cluster": n_para}
     return _bindings(keys, payload, keys.gather(1, idx)+alias, idx, 1+n_facts*n_para+n_values, meta)
 
 
@@ -48,7 +47,7 @@ def dense_clusters(B, n_items=8, n_queries=4, n_keys=24, n_values=16,
     keys = choices(B, n_keys, n_items, device) + 1
     payload = torch.randint(n_values, (B, n_items), device=device) + 1+n_keys
     idx = torch.randint(n_items, (B, n_queries), device=device)
-    meta = dict(chance=1/n_values, clusters=1, per_cluster=n_keys, spread=spread)
+    meta = {"chance": 1/n_values, "clusters": 1, "per_cluster": n_keys, "spread": spread}
     return _bindings(keys, payload, keys.gather(1, idx), idx, 1+n_keys+n_values, meta)
 
 
@@ -66,8 +65,8 @@ def copy_span(B, n_spans=4, width=3, n_tokens=32, device="cpu"):
     weight = torch.ones_like(ids, dtype=torch.float32)
     weight[:, :prefix.shape[1]:width+1] = 0
     weight[:, prefix.shape[1]:] = 0
-    return ids, targets, targets != 0, 1+2*n_spans+n_tokens, dict(
-        chance=1/n_tokens, write_weight=weight, prefix=prefix.shape[1])
+    return ids, targets, targets != 0, 1+2*n_spans+n_tokens, {
+        "chance": 1/n_tokens, "write_weight": weight, "prefix": prefix.shape[1]}
 
 
 def niah(B, ctx_len=96, n_needles=3, n_keys=16, n_values=16, n_filler=32,
@@ -100,7 +99,7 @@ def niah(B, ctx_len=96, n_needles=3, n_keys=16, n_values=16, n_filler=32,
     targets = torch.zeros_like(ids)
     targets[:, -1] = vals[:, 0]
     weight = torch.zeros_like(ids, dtype=torch.float32).scatter_(1, pos+1, 1)
-    return ids, targets, targets != 0, vocab, dict(chance=1/n_values, write_weight=weight)
+    return ids, targets, targets != 0, vocab, {"chance": 1/n_values, "write_weight": weight}
 
 
 @torch.no_grad()

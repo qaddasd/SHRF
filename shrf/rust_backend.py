@@ -1,8 +1,8 @@
 """Batch-one CPU decoder backed by the SHRF Rust cdylib."""
 import ctypes
 import math
-from pathlib import Path
 import sys
+from pathlib import Path
 from threading import Lock
 
 import numpy as np
@@ -29,7 +29,7 @@ class RustSHRF:
         if not Path(library_path).is_file():
             raise FileNotFoundError("Build the decoder with cargo build --release --manifest-path rust/shrf-core/Cargo.toml")
         lib = self.lib = ctypes.CDLL(str(Path(library_path).resolve()))
-        if not hasattr(lib, "shrf_abi_version") or lib.shrf_abi_version() != 4:
+        if not hasattr(lib, "shrf_abi_version") or lib.shrf_abi_version() != 5:
             raise RuntimeError("Rebuild the native library for the current SHRF ABI")
         lib.shrf_new.argtypes = [_Config]
         lib.shrf_new.restype = ctypes.c_void_p

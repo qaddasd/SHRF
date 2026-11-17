@@ -1,0 +1,36 @@
+{
+  "label": "stable-fp64",
+  "torch": "2.6.0+cu124",
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce GTX 1650",
+  "shape": {
+    "d": 512,
+    "trees": 4,
+    "depth": 8,
+    "r": 8,
+    "q": 32,
+    "m": 8,
+    "beam": 2,
+    "chunk": 64
+  },
+  "rows": [
+    {
+      "length": 256,
+      "seconds": 0.1267312000018137,
+      "tokens_s": 2020.023482744078,
+      "repeats": 5
+    },
+    {
+      "length": 1024,
+      "seconds": 0.4345974000025308,
+      "tokens_s": 2356.2036956365523,
+      "repeats": 5
+    },
+    {
+      "length": 4096,
+      "seconds": 1.8227378000010503,
+      "tokens_s": 2247.1690662242477,
+      "repeats": 5
+    }
+  ]
+}

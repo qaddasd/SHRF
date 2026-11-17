@@ -2,7 +2,9 @@ import tempfile
 import unittest
 from io import BytesIO
 from pathlib import Path
+
 import torch
+
 from shrf import SHRFConfig, SHRFLayer
 from shrf.tape import IDTape, TapeConflictError
 
@@ -15,7 +17,7 @@ class TapeTest(unittest.TestCase):
         x = torch.randn(1, 12, 4)
         with tempfile.TemporaryDirectory() as tmp:
             for path in (":memory:", Path(tmp) / "out.sqlite"):
-                with IDTape(path, wal=True) as tape:
+                with IDTape(path, wal=True, checkpoint_mode="reference") as tape:
                     st = layer.init_state(1, tape=tape)
                     layer(x[:, :6], st)
                     buf = BytesIO()
@@ -29,6 +31,21 @@ class TapeTest(unittest.TestCase):
                         self.assertEqual(restored.tape.recover_time(0, 12).time.tolist(), list(range(1, 12)))
                         if path != ":memory:":
                             self.assertEqual(restored.tape.db.execute("PRAGMA journal_mode").fetchone()[0], "wal")
+
+    def test_file_checkpoint_loads_without_original_path(self):
+        k, v = torch.ones(1, 2, 1, 2), torch.ones(1, 2, 3)
+        gate = torch.ones(1, 2)
+        leaves = torch.ones(1, 2, 1, 1, dtype=torch.long)
+        buf = BytesIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "archive.sqlite"
+            with IDTape(path, wal=True) as tape:
+                tape.record(torch.tensor([0]), k, v, gate, leaves, torch.ones_like(leaves))
+                torch.save(tape, buf)
+        buf.seek(0)
+        with torch.load(buf, weights_only=False) as restored:
+            self.assertEqual(restored.path, ":memory:")
+            torch.testing.assert_close(restored.recover_time(0, 2).value, v[0])
 
     def test_retry_conflict_rolls_back_without_overwriting_history(self):
         k, v = torch.ones(1, 2, 1, 2), torch.zeros(1, 2, 3)
@@ -45,6 +62,18 @@ class TapeTest(unittest.TestCase):
             torch.testing.assert_close(tape.recover_time(0, 3).value, v[0])
             with self.assertRaisesRegex(TapeConflictError, "omitted"):
                 tape.record(torch.tensor([1]), k, v, torch.zeros_like(gate), leaves, mass)
+
+    def test_duplicate_retry_preserves_outer_transaction(self):
+        with IDTape() as tape:
+            ids = torch.ones(1, 2, 1, 1)
+            gate = torch.ones(1, 2)
+            args = (torch.tensor([0]), ids, ids.squeeze(-2), gate, ids.long(), ids)
+            tape.db.execute("BEGIN")
+            tape.record(*args)
+            tape.record(*args)
+            self.assertTrue(tape.db.in_transaction)
+            tape.db.rollback()
+            self.assertIsNone(tape.recover_time(0, 2))
     def test_persist_exact_rows_by_batch_tree_and_time(self):
         k, v = torch.randn(2, 7, 2, 4), torch.randn(2, 7, 5)
         route = torch.ones(2, 7, 2, 1, dtype=torch.long)

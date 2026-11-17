@@ -1,13 +1,14 @@
 """Token-matched SHRF/GQA comparison on held-out Python documentation topics."""
 from __future__ import annotations
+
 import argparse
 import hashlib
 import json
 import math
-from pathlib import Path
-from pydoc_data.topics import topics
 import sys
 import time
+from pathlib import Path
+from pydoc_data.topics import topics
 
 import torch
 from torch import nn
@@ -40,8 +41,8 @@ class TopicCorpus:
         self.ends = torch.tensor(counts).cumsum(0)
         self.total = int(self.ends[-1])
         self.data = torch.tensor(list(data), dtype=torch.uint8)
-        self.metadata = dict(topics=[name for _, name, _ in selected], bytes=len(data),
-                             sha256=hashlib.sha256(data).hexdigest())
+        self.metadata = {"topics": [name for _, name, _ in selected], "bytes": len(data),
+                             "sha256": hashlib.sha256(data).hexdigest()}
 
     def batch(self, rng, size, device):
         sample = torch.randint(self.total, (size,), generator=rng)
@@ -187,16 +188,16 @@ def run(kind, train, validation, args):
             synchronize()
             total_seconds += time.perf_counter()-start
             nll = validate(model, validation, args)
-            curve.append(dict(step=step, train_nll=loss.item(), val_bpb=nll/math.log(2)))
+            curve.append({"step": step, "train_nll": loss.item(), "val_bpb": nll/math.log(2)})
             print(kind, curve[-1], flush=True)
             model.train()
             synchronize()
             start = time.perf_counter()
-    return dict(parameters=sum(p.numel() for p in model.parameters()),
-                total_seconds=total_seconds, tokens=args.steps*args.batch*args.context,
-                tokens_per_second=args.steps*args.batch*args.context/total_seconds,
-                val_bpb=curve[-1]["val_bpb"], curve=curve,
-                validation_targets=args.eval_batches*args.batch*args.context)
+    return {"parameters": sum(p.numel() for p in model.parameters()),
+                "total_seconds": total_seconds, "tokens": args.steps*args.batch*args.context,
+                "tokens_per_second": args.steps*args.batch*args.context/total_seconds,
+                "val_bpb": curve[-1]["val_bpb"], "curve": curve,
+                "validation_targets": args.eval_batches*args.batch*args.context}
 
 
 def main():
@@ -219,9 +220,9 @@ def main():
     train = TopicCorpus(args.context, "train")
     val = TopicCorpus(args.context, "validation")
     assert not set(train.metadata["topics"]).intersection(val.metadata["topics"])
-    report = dict(config={k: v for k, v in vars(args).items() if k != "output"},
-                  source="Python standard library pydoc_data.topics", runtime=sys.version,
-                  torch=torch.__version__, train=train.metadata, validation=val.metadata, runs={})
+    report = {"config": {k: v for k, v in vars(args).items() if k != "output"},
+                  "source": "Python standard library pydoc_data.topics", "runtime": sys.version,
+                  "torch": torch.__version__, "train": train.metadata, "validation": val.metadata, "runs": {}}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     for kind in args.models:
         report["runs"][kind] = run(kind, train, val, args)

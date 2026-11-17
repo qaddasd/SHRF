@@ -4,6 +4,9 @@ __pycache__/
 .venv/
 venv/
 target/
+build/
+dist/
+*.egg-info/
 .env
 .env.*
 !.env.example

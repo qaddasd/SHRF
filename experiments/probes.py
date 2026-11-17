@@ -43,7 +43,7 @@ def main():
         }
     Path("results").mkdir(exist_ok=True)
     Path("results/probes.json").write_text(
-        json.dumps(dict(nonlinear_mse=errors, shrinkage_mse=shrink), indent=2)+"\n", encoding="utf-8")
+        json.dumps({"nonlinear_mse": errors, "shrinkage_mse": shrink}, indent=2)+"\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

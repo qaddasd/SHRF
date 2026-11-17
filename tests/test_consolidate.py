@@ -1,10 +1,34 @@
 import unittest
+
 import torch
+
 from shrf import SHRFConfig, SHRFLayer
 from shrf.tape import IDTape
 
 
 class ConsolidationTest(unittest.TestCase):
+    @torch.no_grad()
+    def test_empty_leaves_stay_unassigned_and_evicted_leaf_can_return(self):
+        cfg = SHRFConfig(d_model=1, r_key=1, d_value=1, n_trees=1,
+                         depth=2, beam=1, write_lag=0, decay=.95)
+        layer = SHRFLayer(cfg)
+        layer.W_k.fill_(1.)
+        layer.routing.dirs.fill_(1.)
+        self.assertIsNotNone(layer.sketch)
+        with IDTape() as tape:
+            state = layer.init_state(1, tape=tape)
+            layer(torch.ones(1, 4, 1), state)
+            leaf_map = layer.consolidate(state, budget=4)
+            self.assertEqual(int((leaf_map > 0).sum()), 1)
+            expected_extra = state.extra.clone()
+            layer.consolidate(state, budget=0)
+            self.assertEqual(int((state.leaf_slots > 0).sum()), 0)
+            layer.consolidate(state, budget=4)
+            torch.testing.assert_close(state.extra, expected_extra)
+            self.assertEqual(int((state.leaf_slots > 0).sum()), 1)
+            y, _ = layer.step(torch.ones(1, 1), state)
+            self.assertTrue(torch.isfinite(y).all())
+
     @torch.no_grad()
     def test_budget_preserves_base_and_archive(self):
         torch.manual_seed(17)

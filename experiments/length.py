@@ -1,7 +1,7 @@
 """Paired length extrapolation of the learned write gate."""
 import argparse
-from dataclasses import asdict
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import torch
@@ -21,8 +21,8 @@ def gate_mass(model, device, seed):
     pos = meta["write_weight"].bool()
     filler = ~pos & ~score & (ids >= 33)
     def summary(x):
-        return dict(mean=x.mean().item(), median=x.median().item())
-    return dict(payload=summary(gate[pos]), filler=summary(gate[filler]))
+        return {"mean": x.mean().item(), "median": x.median().item()}
+    return {"payload": summary(gate[pos]), "filler": summary(gate[filler])}
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
     p.add_argument("--output", type=Path, default=Path("results/length.json"))
     args = p.parse_args()
     torch.set_num_threads(2)
-    report = dict(device=args.device, torch=torch.__version__, runs={})
+    report = {"device": args.device, "torch": torch.__version__, "runs": {}}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     for power in args.power:
         cfg = SHRFConfig(d_model=48, n_trees=2, depth=3, r_key=8, d_value=16,
@@ -44,12 +44,12 @@ def main():
         train, model = train_eval(niah, {"ctx_len": 80}, cfg, steps=args.steps,
                                   batch=args.batch, device=args.device, seed=args.seed,
                                   return_model=True)
-        row = dict(config=asdict(cfg), training=train, gates=gate_mass(model, args.device, args.seed+1),
-                   sweep={})
+        row = {"config": asdict(cfg), "training": train, "gates": gate_mass(model, args.device, args.seed+1),
+                   "sweep": {}}
         report["runs"][str(power)] = row
         for length in args.lengths:
             for fraction in (0., .05) if length <= 2048 else (0.,):
-                spec = dict(ctx_len=length, needle_fraction=.05, decoy_fraction=fraction)
+                spec = {"ctx_len": length, "needle_fraction": .05, "decoy_fraction": fraction}
                 val = evaluate(model, niah, spec, batch=4, batches=4, seed=args.seed+1805)
                 label = f"{length}/{fraction:g}"
                 row["sweep"][label] = val

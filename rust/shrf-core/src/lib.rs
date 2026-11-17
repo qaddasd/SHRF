@@ -3,7 +3,7 @@ use std::slice;
 
 #[no_mangle]
 pub extern "C" fn shrf_abi_version() -> u32 {
-    4
+    5
 }
 
 #[repr(C)]
@@ -48,6 +48,7 @@ pub struct State {
     heap: Vec<f64>,
     sketch: Vec<f64>,
     previous: Vec<f64>,
+    value_origin: Vec<f64>,
     key_history: Vec<f64>,
     count: u64,
     times: Vec<u64>,
@@ -184,6 +185,7 @@ fn solve_spd(a: &mut [f64], rhs: &mut [f64], p: usize, q: usize) -> bool {
 }
 
 struct FitWork {
+    c: Config,
     gram: Vec<f64>,
     cross: Vec<f64>,
     coef: Vec<f64>,
@@ -205,6 +207,7 @@ impl FitWork {
     fn new(c: Config) -> Self {
         let p = c.r + c.m;
         Self {
+            c,
             gram: vec![0.; p * p],
             cross: vec![0.; p * c.q],
             coef: vec![0.; p * c.q],
@@ -214,7 +217,6 @@ impl FitWork {
 
     fn predict(
         &mut self,
-        c: Config,
         s: &[f64],
         scale: f64,
         key: &[f64],
@@ -222,6 +224,7 @@ impl FitWork {
         phi: &[f64],
         out: &mut Fit,
     ) {
+        let c = self.c;
         let (r, q, m) = (c.r, c.q, phi.len());
         let n = s[0] * scale;
         out.n = n;
@@ -248,7 +251,7 @@ impl FitWork {
         out.pred.copy_from_slice(&out.mean);
         let mut rss = (s[s.len() - 1] * scale - dot(b, &out.mean) * scale).max(0.);
         out.variance = rss / (n * q as f64);
-        let regularizer = |i| (if i < r { c.rho } else { c.sketch_rho }).max(1e-5 * n);
+        let regularizer = |i| if i < r { c.rho } else { c.sketch_rho };
         let gram = &mut self.gram[..p * p];
         let cross = &mut self.cross[..p * q];
         let coef = &mut self.coef[..p * q];
@@ -408,7 +411,7 @@ impl State {
         let cap = (f64::MAX / (c.q as f64 * 2f64.powi(66))).sqrt();
         for (j, row) in wk.chunks_exact(c.d).enumerate() {
             let raw = dot(row, x);
-            if !(raw.abs() <= cap) {
+            if !raw.is_finite() || raw.abs() > cap {
                 return false;
             }
             w.raw[j] = raw;
@@ -425,9 +428,15 @@ impl State {
         }
         for (dst, row) in w.value.iter_mut().zip(wv.chunks_exact(c.d)) {
             *dst = dot(row, x);
-            if !(dst.abs() <= cap) {
+            if !dst.is_finite() || dst.abs() > cap {
                 return false;
             }
+        }
+        if self.count == 0 {
+            self.value_origin.copy_from_slice(&w.value);
+        }
+        for (value, origin) in w.value.iter_mut().zip(&self.value_origin) {
+            *value -= origin;
         }
         let gate = if c.lag == 1 && self.count == 0 {
             0.
@@ -456,17 +465,22 @@ impl State {
                 };
                 let (prior, current) = w.fits.split_at_mut(vi);
                 let fit = &mut current[0];
-                w.fit.predict(c, stats, factor, k, &[], &[], fit);
+                w.fit.predict(stats, factor, k, &[], &[], fit);
                 if visit.node >= c.leaves() && c.m > 0 {
                     let i = (e * c.leaves() + visit.node - c.leaves()) * c.sketch_width();
                     let extra = &self.sketch[i..i + c.sketch_width()];
                     w.fit
-                        .predict(c, stats, factor, k, extra, &w.read_phi, &mut w.leaf_fit);
+                        .predict(stats, factor, k, extra, &w.read_phi, &mut w.leaf_fit);
                     fit.pred.copy_from_slice(&w.leaf_fit.pred);
                 }
                 if vi == 0 {
                     for (a, p) in w.avg.iter_mut().zip(&fit.pred) {
                         *a += *p;
+                    }
+                    if fit.n > 1e-8 {
+                        for (a, origin) in w.avg.iter_mut().zip(&self.value_origin) {
+                            *a += origin;
+                        }
                     }
                 } else {
                     let parent = &prior[visit.parent];
@@ -577,6 +591,7 @@ pub extern "C" fn shrf_new(c: Config) -> *mut State {
         heap: vec![0.0; c.trees * c.nodes() * c.stat_width()],
         sketch: vec![0.0; c.trees * c.leaves() * c.sketch_width()],
         previous: vec![0.0; c.trees * c.r],
+        value_origin: vec![0.0; c.q],
         key_history: vec![0.0; c.context_lags * c.trees * c.r],
         count: 0,
         times: if c.decay < 1. {
@@ -596,6 +611,9 @@ pub unsafe extern "C" fn shrf_set_weights(
     weights: *const f64,
     len: usize,
 ) -> bool {
+    if state.is_null() || !state.is_aligned() || weights.is_null() || !weights.is_aligned() {
+        return false;
+    }
     let s = &mut *state;
     if len != s.weights.len() || s.count != 0 {
         return false;
@@ -617,6 +635,15 @@ pub unsafe extern "C" fn shrf_step(
     out: *mut f64,
     weight: f64,
 ) -> bool {
+    if state.is_null()
+        || !state.is_aligned()
+        || x.is_null()
+        || out.is_null()
+        || !x.is_aligned()
+        || !out.is_aligned()
+    {
+        return false;
+    }
     let s = &mut *state;
     let d = s.c.d;
     s.step(
@@ -637,13 +664,27 @@ pub unsafe extern "C" fn shrf_decode(
     len: usize,
     weight: *const f64,
 ) -> usize {
-    if len == 0 {
+    if len == 0
+        || state.is_null()
+        || !state.is_aligned()
+        || x.is_null()
+        || out.is_null()
+        || !x.is_aligned()
+        || !out.is_aligned()
+        || (!weight.is_null() && !weight.is_aligned())
+    {
         return 0;
     }
     let s = &mut *state;
     let d = s.c.d;
-    let input = slice::from_raw_parts(x, len * d);
-    let output = slice::from_raw_parts_mut(out, len * d);
+    let Some(items) = len
+        .checked_mul(d)
+        .filter(|size| *size <= isize::MAX as usize / std::mem::size_of::<f64>())
+    else {
+        return 0;
+    };
+    let input = slice::from_raw_parts(x, items);
+    let output = slice::from_raw_parts_mut(out, items);
     let weights = if weight.is_null() {
         None
     } else {
@@ -670,10 +711,14 @@ pub unsafe extern "C" fn shrf_decode(
 /// state is a live, exclusively borrowed handle.
 #[no_mangle]
 pub unsafe extern "C" fn shrf_reset(state: *mut State) {
+    if state.is_null() || !state.is_aligned() {
+        return;
+    }
     let s = &mut *state;
     s.heap.fill(0.0);
     s.sketch.fill(0.0);
     s.previous.fill(0.0);
+    s.value_origin.fill(0.0);
     s.key_history.fill(0.0);
     s.times.fill(0);
     s.count = 0;
@@ -737,9 +782,30 @@ mod tests {
     fn invalid_gram_uses_intercept_only() {
         let c = test_config();
         let mut fit = Fit::new(c.q);
-        FitWork::new(c).predict(c, &[1., 1., 2., 0., 2., 4.], 1., &[0.], &[], &[], &mut fit);
+        FitWork::new(c).predict(&[1., 1., 2., 0., 2., 4.], 1., &[0.], &[], &[], &mut fit);
         assert_eq!(fit.pred, [2.]);
         assert_eq!(fit.variance, 0.);
+    }
+
+    #[test]
+    fn ffi_rejects_null_and_overflowing_inputs() {
+        let state = shrf_new(test_config());
+        let x = [0.];
+        let mut out = [0.];
+        unsafe {
+            use std::ptr::{null, null_mut};
+            assert!(!shrf_set_weights(null_mut(), x.as_ptr(), 1));
+            assert!(!shrf_set_weights(state, null(), 1));
+            assert!(!shrf_step(state, null(), out.as_mut_ptr(), 1.));
+            assert!(!shrf_step(null_mut(), x.as_ptr(), out.as_mut_ptr(), 1.));
+            assert_eq!(shrf_decode(state, x.as_ptr(), null_mut(), 1, null()), 0);
+            assert_eq!(
+                shrf_decode(state, x.as_ptr(), out.as_mut_ptr(), usize::MAX, null()),
+                0
+            );
+            shrf_reset(null_mut());
+            shrf_free(state);
+        }
     }
 
     #[test]

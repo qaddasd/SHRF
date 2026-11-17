@@ -27,10 +27,9 @@ ancestor. The same traversal serves read and write. Gradients flow through
 retained sigmoid weights. Beam membership changes discontinuously at selection
 boundaries; there are no learned codebooks. Bounded depth and a root always
 present make routing errors degrade to a broader model.
-An optional auxiliary loss penalizes squared deviation of each tree's
-path-mass-weighted mean split probability from one half, averaged across
-the depths and chunks. This provides a soft usage signal; it does not
-ensure uniform occupancy of individual internal nodes.
+The auxiliary loss averages branch probabilities per visited node before
+squaring deviations from one half. Node penalties are weighted by
+detached visit mass.
 
 Initially a_u is a seeded independent random direction. The optional
 calibration uses labeled projected write keys and values independently of a
@@ -46,33 +45,36 @@ Calibration uses temporary rows and is outside recurrent decoding.
 ## 3. Additive update and affine read
 
 A node stores mass n, key sum A, value sum b, uncentered Gram G, cross
-moment C, and value squared norm sum F. For retained write node u, let
-w=g_t times its path mass. Add
+moment C, and value squared norm sum F. In PyTorch the stored coordinates
+are k = z - z_origin and y = v - v_origin, with origins set by the first
+token. Rust uses the value origin and FP64 moments. For retained write
+node u, let w = g_t times its path mass. Add
 
-    (n,A,b,G,C,F) += w (1,z,v,zz^T,zv^T,v^T v).
+    (n,A,b,G,C,F) += w (1,k,y,kk^T,ky^T,y^T y).
 
-Means are μ=A/n and ν=b/n, and empty fits return zero. Form the centered
-moments S=G-AA^T/n, U=C-Ab^T/n and V=F-b^T b/n. Let
-ρ_n=max(ρ,10^-5 n), M=(S+ρ_n I)^-1 U. The affine prediction is
-f_u(z)=ν+(z-μ)^T M. Residual sum of squares is
-max(0,V-2 tr(M^T U)+tr(M^T S M)), equivalently
-max(0,V-tr(M^T U)-ρ_n||M||²). The residual variance σ² is RSS/(n q).
+The means are mu = A/n and nu = b/n. Empty fits return zero. Form the
+centered moments S = G - AA^T/n, U = C - Ab^T/n and V = F - b^T b/n.
+Compute M = (S + rho I)^-1 U with the configured, mass-independent rho.
+The affine prediction is v_origin + nu + (k-mu)^T M for nonempty fits.
+The residual variance is max(0,V-tr(M^T U)-rho||M||^2)/(n q).
+Fit and centering use FP64. The origin cancels out of parent/child mean
+differences when both are occupied. See HARDENING.md for precision limits.
 
 ## 4. Nonlinear residual sketch and empirical Bayes
 
 A retained leaf optionally stores the additive random feature moments for
 φ_j(z)=sqrt(2/m) cos(ω_j^T z+β_j), ω_j Gaussian at configured bandwidth,
 β_j uniform on [0,2π). Store Σwφ, Σw zφ^T, Σw φφ^T, Σw φv^T in addition
-to the base moments. For the augmented centered Gram, let A0=S+ρ_n I,
+to the base moments. For the augmented centered Gram, let A0=S+ρ I,
 J=Σw(z-μ)(φ-μ_φ)^T, K=Σw(φ-μ_φ)(φ-μ_φ)^T, Uφ=Σw(φ-μ_φ)(v-ν)^T.
 The joint ridge uses the same key regularizer and a separate positive
-ρ_φ=max(ρ_sketch,10^-5 n). Its Schur-complement correction is
+ρ_φ=ρ_sketch. Its Schur-complement correction is
 
     H=(K+ρ_φ I-J^T A0^-1 J)^-1 (Uφ-J^T M)
     c_u(z)=[φ(z)-μ_φ-J^T A0^-1(z-μ)]^T H.
 
 The implementation solves the small joint system directly and subtracts
-the base prediction where the rate-distortion score requires it. This sketch
+the base prediction to recover the equivalent residual correction. This sketch
 allocates capacity to nonlinear key-conditioned residuals, is mergeable by
 addition and needs no per-prefix SVD. It has random-feature approximation
 behavior rather than the Frequent Directions covariance error bound, and it
@@ -106,20 +108,13 @@ the detached-chunk option provides truncated BPTT. Neither changes the
 forward equations. Single-token decode bypasses sorting and directly
 gathers/scatters visited nodes.
 
-For consolidation, compute each leaf's regularized error reduction:
-tr(U_aug^T M_aug)-tr(U^T M), clamped at zero. This equals the objective gain
-from adding the feature block. Under a uniform slot cost, retaining the
-highest scores solves the *current additive surrogate* for a fixed per-tree
-slot budget. Gather the chosen slots into a smaller tensor, update the
-leaf-to-slot map, leave every affine node intact, and route future sketch
-writes only to retained slots. Budget zero is valid. This policy does not
-promote slots automatically. The tape, enabled from initialization, stores
-write positions, projected keys and values, and weighted leaf assignments
-in a transactional SQLite archive. It can recover the exact projected
-observations for an indexed (batch, tree, leaf, time range). Refit ridge or
-replay the archive to restore detail. Routes discarded by the beam remain
-recoverable by time. The tape is an explicit cold-path fallback and replay
-cost grows with the returned records.
+For consolidation, rank observed leaves by their affine residual sums of
+squares after decay. Allocate up to the configured budget per tree.
+Retain existing moments for chosen leaves and reconstruct newly admitted
+sketches from the tape. Unobserved leaves do not consume slots. Budget zero
+is valid. The tape stores original projected observations and route weights
+in SQLite, indexed by batch, tree, leaf and time. Maintenance can replay
+a leaf's history, with work proportional to the recovered records.
 
 ## 6. Complexity
 

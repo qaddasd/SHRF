@@ -1,7 +1,9 @@
 """RMSNorm/SwiGLU decoder block with SHRF in the attention slot."""
 from __future__ import annotations
+
 import torch
-from torch import nn, Tensor
+from torch import nn
+
 from .config import SHRFConfig
 from .layer import SHRFLayer
 

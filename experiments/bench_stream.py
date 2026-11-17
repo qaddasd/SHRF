@@ -1,10 +1,10 @@
 """Measure one-layer prefill against a selectable SHRF source tree."""
 import argparse
 import json
-from pathlib import Path
 import statistics
 import sys
 import time
+from pathlib import Path
 
 import torch
 
@@ -41,14 +41,14 @@ def main():
             synchronize()
             times.append(time.perf_counter()-start)
         seconds = statistics.median(times)
-        row = dict(length=length, seconds=seconds, tokens_s=length/seconds, repeats=args.repeats)
+        row = {"length": length, "seconds": seconds, "tokens_s": length/seconds, "repeats": args.repeats}
         rows.append(row)
         print(args.label, row, flush=True)
     args.output.parent.mkdir(exist_ok=True, parents=True)
-    args.output.write_text(json.dumps(dict(
-        label=args.label, torch=torch.__version__, device=args.device,
-        gpu=torch.cuda.get_device_name() if args.device == "cuda" else None,
-        shape=dict(d=512, trees=4, depth=8, r=8, q=32, m=8, beam=2, chunk=64), rows=rows),
+    args.output.write_text(json.dumps({
+        "label": args.label, "torch": torch.__version__, "device": args.device,
+        "gpu": torch.cuda.get_device_name() if args.device == "cuda" else None,
+        "shape": {"d": 512, "trees": 4, "depth": 8, "r": 8, "q": 32, "m": 8, "beam": 2, "chunk": 64}, "rows": rows},
         indent=2)+"\n", encoding="utf-8")
 
 

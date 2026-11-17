@@ -1,6 +1,6 @@
 """SHRF hyperparameters shared by training and recurrent inference."""
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 
 @dataclass
@@ -24,7 +24,7 @@ class SHRFConfig:
     sketch_budget: int | None = None
     use_sketch: bool = True
     use_shrinkage: bool = True
-    detach_chunks: bool = True
+    detach_chunks: bool = False
     load_balance_weight: float = 0.01
     seed: int = 0
     context_lags: int = 0

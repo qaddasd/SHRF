@@ -1,7 +1,9 @@
 """Synthetic training and blind/query-only/recurrent evaluation."""
 import time
+
 import torch
 from torch.nn import functional as F
+
 from experiments.model import SHRFModel
 from experiments.tasks import init_cluster_embeddings
 
@@ -33,10 +35,10 @@ def train_eval(task, kwargs, cfg, *, steps, batch, device, seed, val_kwargs=None
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         opt.step()
         if i == 0 or (i+1) % max(1, steps//4) == 0 or i == steps-1:
-            curve.append(dict(step=i+1, acc=acc, loss=loss.item()))
+            curve.append({"step": i+1, "acc": acc, "loss": loss.item()})
     sync()
-    result = dict(seed=seed, steps=steps, batch=batch, seconds=round(time.perf_counter()-start, 3),
-                  chance=meta["chance"], oracle_writes=oracle, curve=curve)
+    result = {"seed": seed, "steps": steps, "batch": batch, "seconds": round(time.perf_counter()-start, 3),
+                  "chance": meta["chance"], "oracle_writes": oracle, "curve": curve}
     val = kwargs if val_kwargs is None else val_kwargs
     result["eval"] = evaluate(model, task, val, eval_batch, eval_batches, seed+1234, oracle=oracle)
     result["query_only"] = evaluate(model, task, val, eval_batch, eval_batches, seed+1234, no_memory=True)
@@ -91,7 +93,7 @@ def evaluate(model, task, kwargs, batch=32, batches=4, seed=1234, *,
     finally:
         if hook is not None:
             hook.remove()
-    result = dict(accuracy=round(hits/scores, 5), targets=scores)
+    result = {"accuracy": round(hits/scores, 5), "targets": scores}
     if rollout:
         result["exact_span"] = round(exact/total, 5)
     else:
