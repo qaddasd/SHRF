@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
+from uuid import uuid4
 
 import numpy as np
 import torch
@@ -15,10 +16,31 @@ class Recovery:
     weight: torch.Tensor
 
 
+class TapeConflictError(sqlite3.IntegrityError):
+    """An archived position was reused for a different observation."""
+
+
 class IDTape:
-    def __init__(self, path: str | Path = ":memory:"):
-        self.db = sqlite3.connect(str(path))
+    def __init__(self, path: str | Path = ":memory:", *, wal=False):
+        self.path = str(path) if str(path) == ":memory:" else str(Path(path).resolve())
+        self.wal = bool(wal)
+        self.db = sqlite3.connect(self.path)
+        self._configure()
+        self._create_tables()
+        with self.db:
+            self.db.execute("INSERT OR IGNORE INTO tape_identity VALUES(1,?)", (uuid4().hex,))
+            self.identity = self._identity()
+
+    def _configure(self):
         self.db.execute("PRAGMA foreign_keys = ON")
+        if self.wal and self.path != ":memory:":
+            mode = self.db.execute("PRAGMA journal_mode = WAL").fetchone()[0]
+            if mode != "wal":
+                self.db.close()
+                raise RuntimeError("SQLite could not enable WAL for this archive")
+            self.db.execute("PRAGMA synchronous = NORMAL")
+
+    def _create_tables(self):
         self.db.executescript("""
             CREATE TABLE IF NOT EXISTS obs(
               batch INTEGER, t INTEGER, key BLOB, value BLOB, gate REAL,
@@ -27,28 +49,100 @@ class IDTape:
               batch INTEGER, tree INTEGER, leaf INTEGER, t INTEGER, mass REAL,
               PRIMARY KEY(batch,tree,leaf,t),
               FOREIGN KEY(batch,t) REFERENCES obs(batch,t)) WITHOUT ROWID;
+            CREATE INDEX IF NOT EXISTS route_position ON route(batch,t,tree,leaf);
+            CREATE TABLE IF NOT EXISTS tape_identity(
+              singleton INTEGER PRIMARY KEY CHECK(singleton = 1), token TEXT NOT NULL);
         """)
+
+    def _identity(self):
+        return self.db.execute("SELECT token FROM tape_identity WHERE singleton=1").fetchone()[0]
+
+    def __getstate__(self):
+        snapshot = "\n".join(self.db.iterdump()) if self.path == ":memory:" else None
+        return self.path, self.wal, self.identity, snapshot
+
+    def __setstate__(self, state):
+        self.path, self.wal, self.identity, snapshot = state
+        if snapshot is not None:
+            self.db = sqlite3.connect(":memory:")
+            self.db.executescript(snapshot)
+            self._configure()
+        else:
+            uri = Path(self.path).as_uri() + "?mode=rw"
+            self.db = sqlite3.connect(uri, uri=True)
+            self._configure()
+            try:
+                self.db.execute("SELECT batch,t FROM obs LIMIT 0")
+                self.db.execute("SELECT batch,tree,leaf,t FROM route LIMIT 0")
+                if self._identity() != self.identity:
+                    raise TapeConflictError("Checkpoint points to a different SQLite archive")
+            except (sqlite3.Error, TypeError):
+                self.db.close()
+                raise
 
     def record(self, starts, keys, values, gate, leaves, mass):
         starts, keys, values, gate, leaves, mass = (
             x.detach().cpu().numpy() for x in (starts, keys, values, gate, leaves, mass))
+        if not all(np.isfinite(array).all() for array in (keys, values, gate, mass)):
+            raise ValueError("Archive observations must be finite")
+        if not ((gate >= 0) & (gate <= 1)).all() or not ((mass >= 0) & (mass <= 1)).all():
+            raise ValueError("Archive gate and route mass must be in [0, 1]")
         B, C, E, _ = keys.shape
         payload, routes = [], []
+        skipped = {}
         # np.save headers are unnecessary: encode dimensionality and dtype with each blob.
         for b in range(B):
             for s in range(C):
                 t = int(starts[b]) + s
                 g = float(gate[b, s])
                 if g <= 0:
+                    skipped.setdefault(b, set()).add(t)
                     continue
                 payload.append((b, t, self._encode(keys[b, s]), self._encode(values[b, s]), g))
                 for e in range(E):
                     for l, w in zip(leaves[b, s, e], mass[b, s, e]):
                         if w > 0:
                             routes.append((b, e, int(l), t, float(w)))
+        try:
+            with self.db:
+                self.db.executemany("INSERT INTO obs VALUES(?,?,?,?,?)", payload)
+                self.db.executemany("INSERT INTO route VALUES(?,?,?,?,?)", routes)
+                self._check_skipped(skipped)
+        except sqlite3.IntegrityError:
+            self._record_retry(payload, routes, skipped)
+
+    def _check_skipped(self, skipped):
+        for batch, times in skipped.items():
+            for (t,) in self.db.execute("SELECT t FROM obs WHERE batch=? AND t>=? AND t<=?",
+                                        (batch, min(times), max(times))):
+                if t in times:
+                    raise TapeConflictError(f"Replay omitted archived data at batch={batch}, t={t}")
+
+    def _record_retry(self, payload, routes, skipped):
+        by_position = {}
+        for batch, tree, leaf, t, mass in routes:
+            by_position.setdefault((batch, t), []).append((tree, leaf, mass))
         with self.db:
-            self.db.executemany("INSERT INTO obs VALUES(?,?,?,?,?)", payload)
-            self.db.executemany("INSERT INTO route VALUES(?,?,?,?,?)", routes)
+            self.db.execute("BEGIN IMMEDIATE")
+            self._check_skipped(skipped)
+            for batch, t, key, value, gate in payload:
+                inserted = self.db.execute(
+                    "INSERT INTO obs VALUES(?,?,?,?,?) ON CONFLICT(batch,t) DO NOTHING",
+                    (batch, t, key, value, gate),
+                ).rowcount
+                expected_routes = sorted(by_position.get((batch, t), ()))
+                if inserted:
+                    self.db.executemany("INSERT INTO route VALUES(?,?,?,?,?)",
+                                        ((batch, e, leaf, t, w) for e, leaf, w in expected_routes))
+                    continue
+                existing = self.db.execute("SELECT key,value,gate FROM obs WHERE batch=? AND t=?",
+                                           (batch, t)).fetchone()
+                existing_routes = self.db.execute(
+                    "SELECT tree,leaf,mass FROM route WHERE batch=? AND t=? ORDER BY tree,leaf",
+                    (batch, t),
+                ).fetchall()
+                if existing != (key, value, gate) or existing_routes != expected_routes:
+                    raise TapeConflictError(f"Archive already contains different data at batch={batch}, t={t}")
 
     @staticmethod
     def _encode(array):

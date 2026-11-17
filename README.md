@@ -11,6 +11,7 @@ inference. The Rust backend implements the full unconsolidated CPU decoder.
 - [Contextual addressing, local value path, and accumulation](docs/REVISION.md)
 - [Measured results and failure modes](RESULTS.md)
 - [Reproduction commands](docs/REPRODUCING.md)
+- [Hardening, checkpointing, and decay](docs/HARDENING.md)
 
 ## Architecture
 
@@ -45,9 +46,11 @@ allocations, with indexed recovery from the optional SQLite tape.
 | Random-payload recall, 512 tokens | Gated SHRF recovered **128/128** payloads. The local-only control recovered **8/128**. |
 | Rust streaming probe, one million tokens | **2/2** synthetic payloads recovered with distinct filler and fact vocabularies. |
 
-The gated block and local-only control scored similarly on held-out Python
-documentation. Long documents with many competing facts and end-to-end
-latency against optimized GQA are open evaluation questions. [Full results](RESULTS.md)
+On held-out Python documentation, the gated block and local-only control
+scored **2.687 and 2.689 bits per byte** on seed 79. This experiment leaves
+the forest's contribution to short-text modeling unresolved. Long natural
+documents with competing facts and end-to-end latency against optimized GQA
+are open evaluation questions. [Full results](RESULTS.md)
 
 ## Quick start
 
@@ -56,11 +59,10 @@ dependencies and can be built for Windows, Linux, or macOS.
 
 ```console
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
-python -m experiments.demo
 cargo build --release --manifest-path rust/shrf-core/Cargo.toml
 cargo test --manifest-path rust/shrf-core/Cargo.toml
-python -m unittest discover -s tests -p test_native.py -v
+python -m unittest discover -s tests -v
+python -m experiments.demo
 ```
 
 The native parity test runs after building the shared library. See

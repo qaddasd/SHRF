@@ -23,6 +23,10 @@ def consolidate(layer, state, budget):
     sketch = layer.sketch
     base = state.heap[:, :, cfg.n_leaves:, :]
     extra = state.extra.gather(2, slots.unsqueeze(-1).expand(*slots.shape, sketch.dim))
+    if state.heap_time is not None:
+        end = state.count[:, None, None]
+        base = base * layer._discount(end - state.heap_time[:, :, cfg.n_leaves:], base).unsqueeze(-1)
+        extra = extra * layer._discount(end - state.extra_time.gather(2, slots), extra).unsqueeze(-1)
     k = base.new_zeros((*base.shape[:-1], cfg.r_key))
     p = base.new_zeros((*base.shape[:-1], sketch.m))
     affine = ridge(base, k, layer.lay, cfg.ridge)
@@ -34,5 +38,8 @@ def consolidate(layer, state, budget):
     new_slots = torch.zeros_like(slots).scatter_(2, keep, new)
     selected = state.extra.gather(2, old.unsqueeze(-1).expand(*old.shape, sketch.dim))
     state.extra = torch.cat((torch.zeros_like(state.extra[:, :, :1]), selected), dim=2)
+    if state.extra_time is not None:
+        clock = state.extra_time
+        state.extra_time = torch.cat((clock[:, :, :1], clock.gather(2, old)), dim=2)
     state.leaf_slots = new_slots
     return new_slots

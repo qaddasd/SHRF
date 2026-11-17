@@ -30,6 +30,7 @@ class SHRFConfig:
     context_lags: int = 0
     gate_power: float = 1.0
     coalesce_writes: bool = True
+    decay: float = 1.0
 
     def __post_init__(self):
         if min(self.d_model, self.n_trees, self.r_key, self.d_value, self.beam, self.chunk_size) < 1:
@@ -46,6 +47,8 @@ class SHRFConfig:
             raise ValueError("context_lags must be an integer in [0, 16]")
         if not math.isfinite(self.gate_power) or not 1 <= self.gate_power <= 16:
             raise ValueError("gate_power must be finite and in [1, 16]")
+        if not 0 < self.decay <= 1:
+            raise ValueError("decay must be in (0, 1]")
         if self.sketch_budget is not None and not 0 <= self.sketch_budget <= self.n_leaves:
             raise ValueError("Sketch budget must be a per-tree leaf count")
 

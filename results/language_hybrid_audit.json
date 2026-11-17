@@ -1,0 +1,215 @@
+{
+  "config": {
+    "device": "cuda",
+    "width": 64,
+    "layers": 4,
+    "context": 64,
+    "batch": 8,
+    "steps": 100,
+    "eval_every": 50,
+    "eval_batches": 12,
+    "seed": 45,
+    "lr": 0.002,
+    "models": [
+      "gqa",
+      "shrf_gated",
+      "local_only",
+      "hybrid"
+    ]
+  },
+  "source": "Python standard library pydoc_data.topics",
+  "runtime": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+  "torch": "2.6.0+cu124",
+  "train": {
+    "topics": [
+      "typesseq-mutable",
+      "compound",
+      "yield",
+      "continue",
+      "while",
+      "raise",
+      "else",
+      "unary",
+      "await",
+      "bltin-type-objects",
+      "types",
+      "assert",
+      "try",
+      "in",
+      "bitwise",
+      "truth",
+      "subscriptions",
+      "specialnames",
+      "floating",
+      "bltin-null-object",
+      "booleans",
+      "operator-summary",
+      "nonlocal",
+      "attribute-references",
+      "slicings",
+      "execmodel",
+      "strings",
+      "string-methods",
+      "naming",
+      "typesseq",
+      "power",
+      "sequence-types",
+      "bltin-ellipsis-object",
+      "dict",
+      "dynamic-features",
+      "objects",
+      "numeric-types",
+      "typesmethods",
+      "identifiers",
+      "function",
+      "shifting",
+      "numbers",
+      "with",
+      "id-classes",
+      "del",
+      "atom-identifiers",
+      "debugger",
+      "break",
+      "exprlists",
+      "global",
+      "typesmodules",
+      "binary",
+      "augassign",
+      "exceptions",
+      "for",
+      "context-managers",
+      "imaginary",
+      "lambda",
+      "return",
+      "integers",
+      "formatstrings",
+      "specialattrs",
+      "import"
+    ],
+    "bytes": 379848,
+    "sha256": "9a1251ea191ff5a8786513e789cabc755383a85da38bb923563224d8b7e6a4c9"
+  },
+  "validation": {
+    "topics": [
+      "atom-literals",
+      "typesmapping",
+      "lists",
+      "class",
+      "async",
+      "assignment",
+      "typesfunctions",
+      "pass",
+      "attribute-access",
+      "conversions",
+      "callable-types",
+      "bltin-code-objects",
+      "customization",
+      "comparisons",
+      "calls"
+    ],
+    "bytes": 79612,
+    "sha256": "31f1c1dce5fc087384cdcb9ce4db9a438bfa209f5f44a2fafca97da708e35861"
+  },
+  "runs": {
+    "gqa": {
+      "parameters": 164416,
+      "total_seconds": 2.9010072000000946,
+      "tokens": 51200,
+      "tokens_per_second": 17649.042718680026,
+      "val_bpb": 3.7944095997203777,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.693637847900391,
+          "val_bpb": 7.3332444384536295
+        },
+        {
+          "step": 50,
+          "train_nll": 3.031162738800049,
+          "val_bpb": 4.274120578461809
+        },
+        {
+          "step": 100,
+          "train_nll": 2.4068379402160645,
+          "val_bpb": 3.7944095997203777
+        }
+      ],
+      "validation_targets": 6144
+    },
+    "shrf_gated": {
+      "parameters": 149528,
+      "total_seconds": 24.15222779999931,
+      "tokens": 51200,
+      "tokens_per_second": 2119.8872594271184,
+      "val_bpb": 3.011219697765393,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.660488128662109,
+          "val_bpb": 7.3822504361965855
+        },
+        {
+          "step": 50,
+          "train_nll": 2.5085361003875732,
+          "val_bpb": 3.5542294071048337
+        },
+        {
+          "step": 100,
+          "train_nll": 1.9107292890548706,
+          "val_bpb": 3.011219697765393
+        }
+      ],
+      "validation_targets": 6144
+    },
+    "local_only": {
+      "parameters": 132032,
+      "total_seconds": 1.2979349000015645,
+      "tokens": 51200,
+      "tokens_per_second": 39447.27890431044,
+      "val_bpb": 3.000934303994318,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.630580425262451,
+          "val_bpb": 7.319934127827854
+        },
+        {
+          "step": 50,
+          "train_nll": 2.4881768226623535,
+          "val_bpb": 3.5460665945469323
+        },
+        {
+          "step": 100,
+          "train_nll": 1.925612211227417,
+          "val_bpb": 3.000934303994318
+        }
+      ],
+      "validation_targets": 6144
+    },
+    "hybrid": {
+      "parameters": 140479,
+      "total_seconds": 17.684859800001504,
+      "tokens": 51200,
+      "tokens_per_second": 2895.1318008184403,
+      "val_bpb": 4.037268565441987,
+      "curve": [
+        {
+          "step": 1,
+          "train_nll": 5.700344562530518,
+          "val_bpb": 7.605421659296899
+        },
+        {
+          "step": 50,
+          "train_nll": 3.140629529953003,
+          "val_bpb": 4.439824458043143
+        },
+        {
+          "step": 100,
+          "train_nll": 2.585660696029663,
+          "val_bpb": 4.037268565441987
+        }
+      ],
+      "validation_targets": 6144
+    }
+  }
+}

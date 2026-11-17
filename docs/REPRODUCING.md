@@ -35,6 +35,13 @@ python -m experiments.bench_stream
 python -m experiments.summarize
 ```
 
+The audit uses an optional four-layer hybrid comparator and separate timing data.
+
+```console
+python -m experiments.language --device cuda --layers 4 --width 64 --context 64 --steps 100 --eval-every 50 --batch 8 --models gqa shrf_gated local_only hybrid --output results/language_hybrid_audit.json
+python -m experiments.bench_rust --output results/rust_bench_audit.json
+```
+
 The held-out corpus comes from the Python documentation bundled with the
 interpreter. The result file records the interpreter version and topic
 split. To retime an earlier checkout, use the same hardware and invoke

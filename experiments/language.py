@@ -114,7 +114,15 @@ class TinyDecoder(nn.Module):
             cfg = SHRFConfig(d_model=width, n_trees=2, depth=3, r_key=8, d_value=24,
                              sketch_rank=6, beam=2, chunk_size=context,
                              context_lags=2 if kind != "shrf" else 0)
-            self.mix = nn.ModuleList(SHRFLayer(cfg) for _ in range(layers))
+            if kind == "hybrid":
+                if layers < 2:
+                    raise ValueError("The hybrid baseline needs at least one SHRF and one GQA block")
+                self.mix = nn.ModuleList(
+                    GQAMixer(width) if (i+1) % 4 == 0 or i+1 == layers else SHRFLayer(cfg)
+                    for i in range(layers)
+                )
+            else:
+                self.mix = nn.ModuleList(SHRFLayer(cfg) for _ in range(layers))
         self.local = local if kind in ("shrf_local", "shrf_gated") else None
         self.gates = (nn.ModuleList(memory_output_gate(width, -3.) for _ in range(layers))
                       if kind == "shrf_gated" else None)
@@ -205,7 +213,7 @@ def main():
     p.add_argument("--lr", type=float, default=.002)
     p.add_argument("--output", type=Path, default=Path("results/language.json"))
     names = ("gqa", "shrf", "shrf_context", "shrf_local", "shrf_gated", "local_only")
-    p.add_argument("--models", nargs="+", choices=names, default=list(names))
+    p.add_argument("--models", nargs="+", choices=(*names, "hybrid"), default=list(names))
     args = p.parse_args()
     torch.set_num_threads(2)
     train = TopicCorpus(args.context, "train")

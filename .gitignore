@@ -18,3 +18,4 @@ checkpoints/
 *.pth
 /SHRF*.zip
 /*.bundle
+/SHRF-publish/

@@ -1,9 +1,18 @@
 import unittest
 import torch
-from shrf.scans import causal_prefix, exclusive_segmented_cumsum
+from shrf.scans import causal_prefix, coalesce_rows, exclusive_segmented_cumsum
 
 
 class ScanTest(unittest.TestCase):
+    def test_empty_coalesced_input_keeps_shape_and_gradient(self):
+        rows = torch.empty(0, 3, dtype=torch.float32, requires_grad=True)
+        group = torch.empty(0, dtype=torch.long)
+        groups, result = coalesce_rows(group, rows)
+        self.assertEqual(groups.shape, (0,))
+        self.assertEqual(result.shape, (0, 3))
+        result.sum().backward()
+        self.assertEqual(rows.grad.shape, rows.shape)
+
     def test_scan_against_brute_force(self):
         group = torch.tensor([1,1,1,3,3,4,4,4])
         x = torch.randn(8, 5).requires_grad_()

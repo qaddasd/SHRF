@@ -23,6 +23,9 @@ class SHRFState:
     route_version: int
     tape: IDTape | None = None
     key_history: Tensor | None = None
+    heap_time: Tensor | None = None
+    extra_time: Tensor | None = None
+    decay: float = 1.0
 
 
 class SHRFLayer(nn.Module):
@@ -61,9 +64,10 @@ class SHRFLayer(nn.Module):
             slots = torch.arange(1, c.n_leaves + 1, device=device).expand(B, c.n_trees, -1).clone()
         history = (heap.new_zeros((B, c.context_lags, c.n_trees, c.r_key))
                    if c.context_lags else None)
+        count = torch.zeros(B, device=device, dtype=torch.long)
+        clocks = tuple(count.new_zeros(tensor.shape[:-1]) for tensor in (heap, extra)) if c.decay < 1 else (None, None)
         return SHRFState(heap, extra, slots, heap.new_zeros((B, c.n_trees, c.r_key)),
-                         torch.zeros(B, device=device, dtype=torch.long), self._route_version,
-                         tape, history)
+                         count, self._route_version, tape, history, *clocks, c.decay)
 
     @staticmethod
     def _group(nodes, size):
@@ -71,13 +75,23 @@ class SHRFLayer(nn.Module):
         offset = torch.arange(b*e, device=nodes.device).reshape(b, 1, e, 1)
         return offset * size + nodes
 
-    @staticmethod
-    def _read_pass(heap, read_group, write_group, rows):
+    def _discount(self, ages, ref):
+        return (ages.to(torch.float64) * math.log(self.cfg.decay)).exp().to(ref.dtype)
+
+    def _read_pass(self, heap, read_group, write_group, rows, clock, time, scale, *, root=False):
         flat = heap.flatten(0, 2)
         prefix = flat[read_group]
-        if read_group.shape[1] > 1:
-            prefix = prefix + causal_prefix(read_group, write_group, rows)
-        return prefix
+        if clock is not None:
+            ages = time - clock.reshape(-1)[read_group]
+            prefix = prefix * self._discount(ages, prefix).unsqueeze(-1)
+        if read_group.shape[1] == 1:
+            return prefix
+        if root:
+            delta = torch.cat((torch.zeros_like(rows[:, :1]), rows[:, :-1]), 1)
+            delta = delta.cumsum(1, dtype=torch.float64).to(rows.dtype)
+        else:
+            delta = causal_prefix(read_group, write_group, rows)
+        return prefix + (delta if scale is None else delta * scale)
 
     @staticmethod
     def _commit(heap, groups, rows, backpropagate, coalesce=False):
@@ -97,6 +111,22 @@ class SHRFLayer(nn.Module):
                     flat.index_add_(0, group.reshape(-1), row.flatten(0, -2))
         return heap
 
+    def _commit_decayed(self, heap, clock, groups, rows, end, scale, keep_graph):
+        index = torch.cat([group.reshape(-1) for group in groups])
+        values = torch.cat([row.flatten(0, -2) for row in rows])
+        flat, times = heap.flatten(0, 2), clock.flatten()
+        with torch.set_grad_enabled(keep_graph):
+            index, values = coalesce_rows(index, values)
+            end_time = end[index // (heap.shape[1] * heap.shape[2])]
+            ages = end_time - times[index]
+            values = flat[index] * self._discount(ages, flat).unsqueeze(-1) + values * scale
+            if keep_graph:
+                flat = flat.index_copy(0, index, values)
+            else:
+                flat.index_copy_(0, index, values)
+        times.index_copy_(0, index, end_time)
+        return flat.reshape_as(heap)
+
     def _contextual_keys(self, raw, history, keep_graph):
         if self.context_mix is None:
             return raw.tanh(), history
@@ -109,7 +139,15 @@ class SHRFLayer(nn.Module):
         history = padded[:, -lags:]
         return contextual.tanh(), history if keep_graph else history.detach().clone()
 
-    def _chunk(self, k, v, gate, state):
+    def _node_balance(self, route, probability):
+        group = self._group(route.node, self.cfg.n_nodes).reshape(-1)
+        mass = route.mass.detach()
+        _, totals = coalesce_rows(group, torch.stack((mass, mass * probability), -1).reshape(-1, 2))
+        visits, right = totals.unbind(-1)
+        midpoint_error = right / visits.clamp_min(1e-8) - 0.5
+        return (visits * midpoint_error.square()).sum() / visits.sum().clamp_min(1e-8)
+
+    def _chunk(self, k, v, gate, state, balance):
         c = self.cfg
         kw = k
         trajectory = k
@@ -136,21 +174,23 @@ class SHRFLayer(nn.Module):
             phi = self.sketch.features(trajectory)
             phi_r, phi_w = (phi[:, 1:], phi[:, :-1]) if c.write_lag else (phi, phi)
             raw_extra = self.sketch.contribution(kw, phi_w, values)
+        elapsed = k.shape[1]
+        clock = state.heap_time
+        time = prefix_scale = end_scale = None
+        scaled_gate = gate
+        if clock is not None:
+            offsets = torch.arange(elapsed, device=k.device)
+            time = (state.count[:, None] + offsets)[:, :, None, None]
+            scaled_gate = gate * self._discount(-offsets, gate)
+            prefix_scale = self._discount((offsets-1).clamp_min(0), k)[None, :, None, None, None]
+            end_scale = self._discount(offsets[-1], k)
         groups, rows, prefixes = [], [], []
         for depth, (rd, wr) in enumerate(zip(read, write)):
             rg, wg = self._group(rd.node, c.n_nodes), self._group(wr.node, c.n_nodes)
-            weighted = raw.unsqueeze(-2) * (gate[..., None, None] * wr.mass).unsqueeze(-1)
+            weighted = raw.unsqueeze(-2) * (scaled_gate[..., None, None] * wr.mass).unsqueeze(-1)
             groups.append(wg)
             rows.append(weighted)
-            if depth == 0:
-                # There is exactly one read and one write per (batch, time, tree).
-                base = state.heap[:, None, :, 1:2, :]
-                prefix = torch.cat((torch.zeros_like(weighted[:, :1]), weighted[:, :-1]), 1)
-                if weighted.shape[1] > 1:
-                    prefix = prefix.cumsum(1, dtype=torch.float64).to(weighted.dtype)
-                stats = base + prefix
-            else:
-                stats = self._read_pass(state.heap, rg, wg, weighted)
+            stats = self._read_pass(state.heap, rg, wg, weighted, clock, time, prefix_scale, root=depth == 0)
             prefixes.append(stats)
 
         # Every affine fit is independent of the hierarchical read. Factorize
@@ -172,9 +212,10 @@ class SHRFLayer(nn.Module):
             rs, ws = flat_slots[offset + leaves_r], flat_slots[offset + leaves_w]
             read_slots = self._group(rs, state.extra.shape[2])
             write_slots = self._group(ws, state.extra.shape[2])
-            mass = (gate[..., None, None] * wr.mass) * (ws != 0)
+            mass = (scaled_gate[..., None, None] * wr.mass) * (ws != 0)
             extra_rows = raw_extra.unsqueeze(-2) * mass.unsqueeze(-1)
-            extra = self._read_pass(state.extra, read_slots, write_slots, extra_rows)
+            extra = self._read_pass(state.extra, read_slots, write_slots, extra_rows,
+                                    state.extra_time, time, prefix_scale)
             phi = phi_r.unsqueeze(-2).expand(*rd.node.shape, self.sketch.m)
             leaf_key = k.unsqueeze(-2).expand(*rd.node.shape, c.r_key)
             nonlinear = self.sketch.joint(prefixes[-1], extra, leaf_key, phi, self.lay,
@@ -197,21 +238,26 @@ class SHRFLayer(nn.Module):
             correction = lam.unsqueeze(-1) * (pred - parent_pred)
             previous_pred = parent_pred + correction
             result = result + (rd.mass.unsqueeze(-1) * correction).sum(-2)
-            # A tree can only receive a balancing gradient where it is visited.
-            weight = read[depth-1].mass
-            p = rd.right_probability
-            aux.append(((p*weight).sum((0, 1, 3)) / weight.sum((0, 1, 3)).clamp_min(1e-8) - 0.5).square().mean())
+            if balance:
+                aux.append(self._node_balance(read[depth-1], rd.right_probability))
 
         if state.tape is not None:
             state.tape.record(state.count, kw, v, gate, write[-1].node - c.n_leaves, write[-1].mass)
 
         keep_graph = torch.is_grad_enabled() and not c.detach_chunks
         coalesce = c.coalesce_writes and k.shape[1] > 1
-        state.heap = self._commit(state.heap, groups, rows, keep_graph, coalesce)
-        if use_sketch:
-            state.extra = self._commit(state.extra, [write_slots], [extra_rows], keep_graph, coalesce)
+        end = state.count + elapsed
+        if clock is None:
+            state.heap = self._commit(state.heap, groups, rows, keep_graph, coalesce)
+            if use_sketch:
+                state.extra = self._commit(state.extra, [write_slots], [extra_rows], keep_graph, coalesce)
+        else:
+            state.heap = self._commit_decayed(state.heap, clock, groups, rows, end, end_scale, keep_graph)
+            if use_sketch:
+                state.extra = self._commit_decayed(state.extra, state.extra_time, [write_slots],
+                                                   [extra_rows], end, end_scale, keep_graph)
         state.previous_key = k[:, -1] if keep_graph else k[:, -1].detach().clone()
-        state.count = state.count + k.shape[1]
+        state.count = end
         return result.mean(-2), torch.stack(aux).mean() if aux else k.new_zeros(())
 
     def forward(self, x, state=None, return_aux=False, *, write_weight=None):
@@ -222,30 +268,51 @@ class SHRFLayer(nn.Module):
             state = self.init_state(B, device=x.device)
         if state.route_version != self._route_version:
             raise ValueError("Routing changed. Initialize an empty state or replay the archive.")
+        if state.decay != self.cfg.decay:
+            raise ValueError("State decay differs from the layer configuration")
         if state.heap.shape[0] != B or state.heap.device != x.device:
             raise ValueError("State batch or device does not match the input")
         if write_weight is not None and write_weight.shape != (B, T):
             raise ValueError("Expected write_weight with shape [batch, time]")
-        if not T:
+        if not T or not B:
             self.last_aux = x.new_zeros(())
             return (x, state, self.last_aux) if return_aux else (x, state)
 
         c = self.cfg
+        if not bool(torch.isfinite(x).all()):
+            raise ValueError("SHRF inputs must be finite")
         # Project in model precision. Keep float32/64 for moments and solves.
         raw_keys = torch.einsum("btd,erd->bter", x, self.W_k).to(state.heap.dtype)
         values = self.W_v(x).to(state.heap.dtype)
-        gate = self.write_gate(x).squeeze(-1).to(state.heap.dtype).sigmoid()
+        logits = self.write_gate(x).squeeze(-1).to(state.heap.dtype)
+        # Reserve headroom for value-energy sums over any int64 token count.
+        value_cap = math.sqrt(torch.finfo(values.dtype).max / (c.d_value * 2**66))
+        safe_projections = ((raw_keys.abs() <= value_cap).all() & torch.isfinite(logits).all()
+                            & (values.abs() <= value_cap).all())
+        if self.context_mix is not None:
+            safe_projections = safe_projections & (self.context_mix.abs() <= value_cap).all()
+        if not bool(safe_projections):
+            raise ValueError("SHRF projections are non-finite or exceed the moment accumulation range")
+        gate = logits.sigmoid()
         if c.gate_power != 1:
             gate = gate.pow(c.gate_power)
         if write_weight is not None:
-            gate = gate * write_weight.to(device=x.device, dtype=gate.dtype)
+            weight = write_weight.to(device=x.device, dtype=gate.dtype)
+            if not bool(((weight >= 0) & (weight <= 1)).all()):
+                raise ValueError("write_weight must be finite and in [0, 1]")
+            gate = gate * weight
         output, aux_total = [], raw_keys.new_zeros(())
         keep_graph = torch.is_grad_enabled() and not c.detach_chunks
+        balance = c.load_balance_weight != 0 and (return_aux or torch.is_grad_enabled())
+        chunk = c.chunk_size
+        if c.decay < 1:
+            # Keep chunk-local inverse powers bounded even for very short half-lives.
+            chunk = min(chunk, max(1, int(16 / -math.log(c.decay))))
         with torch.autocast(device_type=x.device.type, enabled=False):
-            for start in range(0, T, c.chunk_size):
-                end = min(start + c.chunk_size, T)
+            for start in range(0, T, chunk):
+                end = min(start + chunk, T)
                 keys, history = self._contextual_keys(raw_keys[:, start:end], state.key_history, keep_graph)
-                y, aux = self._chunk(keys, values[:, start:end], gate[:, start:end], state)
+                y, aux = self._chunk(keys, values[:, start:end], gate[:, start:end], state, balance)
                 state.key_history = history
                 output.append(y)
                 aux_total = aux_total + (end-start) * aux

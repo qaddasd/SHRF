@@ -48,6 +48,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--tokens", type=int, default=300)
     p.add_argument("--repeats", type=int, default=3)
+    p.add_argument("--output", type=Path, default=Path("results/rust_bench.json"))
     args = p.parse_args()
     torch.set_num_threads(1)
     rows = [bench("small", SHRFConfig(d_model=64, n_trees=4, depth=6, r_key=8,
@@ -55,8 +56,8 @@ def main():
             bench("d4096", SHRFConfig(d_model=4096, n_trees=4, depth=11, r_key=8,
                                      d_value=64, sketch_rank=8), args.tokens, args.repeats)]
     result = dict(torch=torch.__version__, cpu=os.environ.get("PROCESSOR_IDENTIFIER"), runs=rows)
-    Path("results").mkdir(exist_ok=True)
-    Path("results/rust_bench.json").write_text(json.dumps(result, indent=2)+"\n", encoding="utf-8")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result, indent=2)+"\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
 
 

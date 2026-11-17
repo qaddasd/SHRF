@@ -14,7 +14,7 @@ class NativeTest(unittest.TestCase):
         w = torch.rand(12, dtype=torch.float64)
         w[2] = 0
         for extras in ({}, dict(use_sketch=False, use_shrinkage=False, write_lag=0),
-                       dict(context_lags=3, gate_power=4)):
+                       dict(context_lags=3, gate_power=4, decay=.91)):
             layer = SHRFLayer(SHRFConfig(d_model=8, depth=3, r_key=4, d_value=6, **extras)).double()
             if layer.context_mix is not None:
                 layer.context_mix.normal_(mean=.1, std=.2)
@@ -34,4 +34,13 @@ class NativeTest(unittest.TestCase):
                 self.assertEqual(decoder.prefill(x[:0]).shape, (0, x.shape[1]))
                 self.assertEqual(decoder.prefill(x[:2], write_weight=w[:2]).shape, (2, x.shape[1]))
                 torch.testing.assert_close(expected[2:], decoder.prefill(x[2:], write_weight=w[2:]),
+                                           atol=1e-10, rtol=1e-9)
+                decoder.reset()
+                damaged = x.clone()
+                damaged[-1, -1] = torch.inf
+                with self.assertRaisesRegex(ValueError, "0 accepted tokens"):
+                    decoder.prefill(damaged)
+                with self.assertRaises(ValueError):
+                    decoder.step(damaged[-1])
+                torch.testing.assert_close(expected, decoder.prefill(x, write_weight=w),
                                            atol=1e-10, rtol=1e-9)

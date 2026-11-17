@@ -1,6 +1,7 @@
 import unittest
 import torch
 from shrf import SHRFConfig, SHRFLayer
+from shrf.routing import RouteLevel
 
 
 class LayerTest(unittest.TestCase):
@@ -71,6 +72,52 @@ class LayerTest(unittest.TestCase):
             SHRFLayer._commit(original, [group], [rows], False, False)
         self.assertEqual(original[0,0,0,0].item(), 1e6)
         self.assertLess(abs(float(heap[0,0,0,0])-1_000_051.2), 1.3)
+
+    @torch.no_grad()
+    def test_bad_input_and_weight_leave_stream_unchanged(self):
+        layer = SHRFLayer(SHRFConfig(**self.cfg, chunk_size=3, context_lags=2, decay=.99))
+        _, state = layer(self.x[:, :4])
+        _, reference = layer(self.x[:, :4])
+        for bad in (torch.nan, torch.inf, 1e30):
+            damaged = self.x[:, 4:].clone()
+            damaged[:, -1, -1] = bad
+            with self.assertRaises(ValueError):
+                layer(damaged, state)
+            self.assertEqual(state.count.tolist(), [4, 4])
+        with self.assertRaisesRegex(ValueError, "write_weight"):
+            layer(self.x[:, 4:], state, write_weight=torch.full((2, 13), float("nan")))
+        expected, _ = layer(self.x[:, 4:], reference)
+        actual, _ = layer(self.x[:, 4:], state)
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+    def test_opposite_collapsed_nodes_do_not_cancel(self):
+        layer = SHRFLayer(SHRFConfig(d_model=4, n_trees=1))
+        nodes = torch.tensor([2, 3]).reshape(1, 2, 1, 1)
+        p = torch.tensor([.01, .99]).reshape_as(nodes).requires_grad_()
+        loss = layer._node_balance(RouteLevel(nodes, torch.ones_like(p), None), p)
+        self.assertGreater(loss.item(), .24)
+        loss.backward()
+        self.assertLess(float(p.grad[0, 0, 0, 0]), 0)
+        self.assertGreater(float(p.grad[0, 1, 0, 0]), 0)
+
+    def test_decay_matches_steps_and_keeps_gradients_across_chunks(self):
+        settings = dict(**self.cfg, decay=.86, detach_chunks=False)
+        multi = SHRFLayer(SHRFConfig(**settings, chunk_size=5)).double()
+        single = SHRFLayer(SHRFConfig(**settings, chunk_size=1)).double()
+        single.load_state_dict(multi.state_dict())
+        expected_grad = None
+        for layer in (multi, single):
+            x = self.x.double().requires_grad_()
+            y, state = layer(x)
+            root = state.heap[:, :, 1, 0]
+            expected = sum(.86**i for i in range(16))*torch.sigmoid(torch.tensor(1., dtype=x.dtype))
+            torch.testing.assert_close(root, expected.expand_as(root))
+            y.square().mean().backward()
+            if expected_grad is None:
+                expected_y, expected_grad = y.detach(), x.grad
+            else:
+                torch.testing.assert_close(y, expected_y, atol=1e-9, rtol=1e-8)
+                torch.testing.assert_close(x.grad, expected_grad, atol=1e-9, rtol=1e-8)
 
 
 if __name__ == "__main__":

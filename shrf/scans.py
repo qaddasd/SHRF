@@ -36,6 +36,8 @@ def causal_prefix(read_group, write_group, write_rows):
 
 def coalesce_rows(group, values):
     """Return one FP64-accumulated update per distinct node."""
+    if group.shape[0] == 0:
+        return group, values
     order = group.argsort(stable=True)
     nodes, lengths = group[order].unique_consecutive(return_counts=True)
     sums = torch.segment_reduce(values[order].to(torch.float64), "sum", lengths=lengths)
